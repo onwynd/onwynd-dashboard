@@ -1,0 +1,128 @@
+export const ROLE_LABELS: Record<string, string> = {
+  super_admin: "Super Admin",
+  admin: "Administrator",
+  founder: "Founder",
+  president: "President",
+  ceo: "CEO",
+  coo: "COO",
+  cgo: "CGO",
+  cfo: "CFO",
+  audit: "Audit",
+  vp_sales: "VP Sales",
+  vp_marketing: "VP Marketing",
+  vp_operations: "VP Operations",
+  vp_product: "VP Product",
+  therapist: "Therapist",
+  clinical_advisor: "Clinical Advisor",
+  secretary: "Secretary",
+  finance: "Finance",
+  hr: "HR",
+  manager: "Manager",
+  employee: "Employee",
+  support: "Support",
+  sales: "Business Development",
+  finder: "Finder",
+  closer: "Senior Account Executive",
+  builder: "Builder",
+  relationship_manager: "Relationship Manager",
+  tech: "Tech",
+  tech_team: "Tech Team",
+  product_manager: "Product Manager",
+  product: "Product",
+  marketing: "Marketing",
+  ambassador: "Ambassador",
+  legal_advisor: "Legal Advisor",
+  compliance: "Compliance",
+  institutional: "Institutional",
+  institution_admin: "Institution Admin",
+  university_admin: "University Admin",
+  ngo_admin: "NGO Admin",
+  partner: "Partner",
+  center: "Center",
+  health_personnel: "Health Personnel",
+  customer: "Customer",
+  investor: "Investor",
+  data_entry: "Data Entry",
+  patient: "Member",
+  user: "Member",
+};
+
+export const ROLE_DASHBOARD_PATHS: Record<string, string> = {
+  super_admin: "/admin/dashboard",
+  admin: "/admin/dashboard",
+  founder: "/admin/dashboard",
+  president: "/president/dashboard",
+  ceo: "/ceo/dashboard",
+  coo: "/coo/dashboard",
+  cgo: "/cgo/dashboard",
+  cfo: "/cfo/dashboard",
+  audit: "/audit/dashboard",
+  vp_sales: "/vp-sales/dashboard",
+  vp_marketing: "/vp-marketing/dashboard",
+  vp_operations: "/vp-ops/dashboard",
+  vp_product: "/vp-product/dashboard",
+  therapist: "/therapist/dashboard",
+  clinical_advisor: "/clinical/dashboard",
+  secretary: "/secretary/dashboard",
+  finance: "/finance/dashboard",
+  hr: "/hr/dashboard",
+  manager: "/manager/dashboard",
+  employee: "/employee/dashboard",
+  support: "/support/dashboard",
+  sales: "/sales/dashboard",
+  finder: "/sales/dashboard",
+  closer: "/sales/closer",
+  builder: "/sales/dashboard",
+  relationship_manager: "/sales/dashboard",
+  tech: "/tech/dashboard",
+  tech_team: "/tech/dashboard",
+  product_manager: "/product-manager/dashboard",
+  product: "/product-manager/dashboard",
+  marketing: "/marketing/dashboard",
+  ambassador: "/ambassador/dashboard",
+  legal_advisor: "/legal/dashboard",
+  compliance: "/compliance/dashboard",
+  institutional: "/institutional/dashboard",
+  institution_admin: "/institutional/dashboard",
+  university_admin: "/university/dashboard",
+  ngo_admin: "/ngo/dashboard",
+  partner: "/partner/dashboard",
+  center: "/center/dashboard",
+  health_personnel: "/health-personnel/dashboard",
+  customer: "/dashboard",
+  investor: "/dashboard",
+  data_entry: "/admin/dashboard",
+  patient: "/dashboard",
+  user: "/dashboard",
+};
+
+const ROLE_API_PREFIXES: Record<string, string> = {
+  user: "/patient",
+  health_personnel: "/health",
+  legal_advisor: "/legal",
+  clinical_advisor: "/clinical-advisor",
+  product_manager: "/product-manager",
+  tech_team: "/tech",
+  institution_admin: "/institutional",
+  university_admin: "/institutional",
+  vp_sales: "/vp-sales",
+  vp_marketing: "/vp-marketing",
+  vp_operations: "/vp-ops",
+  vp_product: "/vp-product",
+};
+
+export function getDashboardPathForRole(role: string | null | undefined): string {
+  if (!role) {
+    return "/dashboard";
+  }
+
+  return ROLE_DASHBOARD_PATHS[role] ?? "/dashboard";
+}
+
+export function getApiPrefixForRole(role: string | null | undefined): string {
+  if (!role || role === "patient" || role === "user") {
+    return "/patient";
+  }
+
+  return ROLE_API_PREFIXES[role] ?? `/${role.replaceAll("_", "-")}`;
+}
