@@ -1,0 +1,16 @@
+<svg viewBox="0 0 176 80" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0"><g id="Slider">
+<g id="Button Icon_18">
+<rect x="0" y="0" width="80" height="80" rx="40" fill="white"/>
+<g id="Solid arrow left sm">
+<path id="Vector_166" d="M50,40h-19" stroke="#4B3425" stroke-width="2" stroke-linejoin="round"/>
+<path id="Vector_167" d="M35.447,45.8c-1.276,-0.35 -2.403,-1.1 -3.207,-2.15c-0.804,-1.05 -1.24,-2.33 -1.24,-3.65c0,-1.32 0.436,-2.6 1.24,-3.65c0.804,-1.05 1.931,-1.8 3.207,-2.15" stroke="#4B3425" stroke-width="2" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="Button Icon_19">
+<rect x="96" y="0" width="80" height="80" rx="40" fill="white"/>
+<g id="Monotone arrow right sm_16">
+<path id="Vector_168" d="M126,40h19" stroke="#4B3425" stroke-width="2" stroke-linejoin="round"/>
+<path id="Vector_169" d="M140.553,45.8c1.276,-0.35 2.403,-1.1 3.207,-2.15c0.804,-1.05 1.24,-2.33 1.24,-3.65c0,-1.32 -0.436,-2.6 -1.24,-3.65c-0.804,-1.05 -1.931,-1.8 -3.207,-2.15" stroke="#4B3425" stroke-width="2" stroke-linejoin="round"/>
+</g>
+</g>
+</g></svg>

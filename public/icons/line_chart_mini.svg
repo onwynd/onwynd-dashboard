@@ -1,0 +1,7 @@
+<svg viewBox="0 0 147.5 40" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0"><defs><linearGradient id="paint1_linear_10723_18403" x1="73.75" y1="40" x2="73.75" y2="1.949999999999818" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F43F5E" stop-opacity="0"/>
+<stop offset="1" stop-color="#F43F5E"/>
+</linearGradient></defs><g id="Line Chart Mini">
+<path id="Chart" opacity="0.24" d="M6.442,3.16h-6.442v36.84h147.5l-7.02,-6.41l-6.442,-4.45l-6.359,-11.38l-6.359,5.07l-6.359,3.73l-6.359,-1.33l-6.442,-7.47h-6.359l-6.36,-2.44l-6.441,-5.64l-6.359,5.45l-6.36,-3.34l-6.441,6.5l-6.36,1.8l-6.441,-4.19l-6.277,-5.97l-6.442,2.65l-6.442,7.36l-6.276,-4.37l-6.442,-13.62l-6.359,6.18z" fill="url(#paint1_linear_10723_18403)"/>
+<path id="Chart_2" d="M0,3.16h6.442l6.359,4.97l6.359,-6.18l6.442,13.62l6.276,4.37l6.442,-7.36l6.442,-2.65l6.277,5.97l6.441,4.19l6.36,-1.8l6.441,-6.5l6.36,3.34l6.359,-5.45l6.441,5.64l6.36,2.44h6.359l6.442,7.47l6.359,1.33l6.359,-3.73l6.359,-5.07l6.359,11.38l6.442,4.45l7.02,6.41" stroke="#FB7185" stroke-width="2" stroke-linecap="round"/>
+</g></svg>

@@ -1,6 +1,18 @@
 import type { AxiosError } from 'axios'
 import { toast } from '@/components/ui/use-toast'
 
+// Deduplication: track last-shown message + timestamp to prevent toast floods
+const _lastToast: { key: string; at: number } = { key: '', at: 0 }
+const DEDUP_MS = 4000
+
+function showToast(description: string) {
+  const now = Date.now()
+  if (description === _lastToast.key && now - _lastToast.at < DEDUP_MS) return
+  _lastToast.key = description
+  _lastToast.at = now
+  toast({ description, variant: 'destructive', duration: 6000 })
+}
+
 export function handleAxiosError(error: unknown) {
   const e = error as AxiosError<unknown>
   const status = e?.response?.status
@@ -12,10 +24,10 @@ export function handleAxiosError(error: unknown) {
   }
   const message = messageFromServer || e?.message || 'Request failed'
   if (status && status >= 500) {
-    toast({ description: 'Server error: ' + message, variant: 'destructive', duration: 6000 })
+    showToast('Server error: ' + message)
   } else if (status && status >= 400) {
-    toast({ description: 'Request error: ' + message, variant: 'destructive', duration: 6000 })
+    showToast('Request error: ' + message)
   } else if (!status) {
-    toast({ description: 'Network error: ' + message, variant: 'destructive', duration: 6000 })
+    showToast('Network error: ' + message)
   }
 }

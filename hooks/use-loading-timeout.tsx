@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 
 interface UseLoadingTimeoutOptions {
-  timeout?: number // timeout in milliseconds (default: 30000ms = 30s)
-  onTimeout?: () => void // callback when timeout occurs
+  timeout?: number
+  onTimeout?: () => void
 }
 
 interface UseLoadingTimeoutReturn {
@@ -16,55 +16,56 @@ interface UseLoadingTimeoutReturn {
 }
 
 export function useLoadingTimeout(options: UseLoadingTimeoutOptions = {}): UseLoadingTimeoutReturn {
-  const { timeout = 30000, onTimeout } = options
   const [isLoading, setIsLoading] = useState(false)
   const [isTimedOut, setIsTimedOut] = useState(false)
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
-  const clearExistingTimeout = useCallback(() => {
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-      setTimeoutId(null)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  // Keep latest options in refs so callbacks are always stable (never recreated)
+  const optionsRef = useRef(options)
+  optionsRef.current = options
+
+  const clearTimer = () => {
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
     }
-  }, [timeoutId])
+  }
 
   const startLoading = useCallback(() => {
-    clearExistingTimeout()
+    clearTimer()
     setIsLoading(true)
     setIsTimedOut(false)
-    
-    const id = setTimeout(() => {
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null
       setIsLoading(false)
       setIsTimedOut(true)
-      onTimeout?.()
-    }, timeout)
-    
-    setTimeoutId(id)
-  }, [clearExistingTimeout, timeout, onTimeout])
+      optionsRef.current.onTimeout?.()
+    }, optionsRef.current.timeout ?? 30000)
+  }, []) // stable — all values read from refs at call time
 
   const stopLoading = useCallback(() => {
-    clearExistingTimeout()
+    clearTimer()
     setIsLoading(false)
     setIsTimedOut(false)
-  }, [clearExistingTimeout])
+  }, []) // stable
 
   const resetTimeout = useCallback(() => {
-    if (isLoading) {
-      startLoading()
+    // Only restart the timer if currently loading — read live state via ref trick
+    if (timerRef.current !== null) {
+      clearTimer()
+      timerRef.current = setTimeout(() => {
+        timerRef.current = null
+        setIsLoading(false)
+        setIsTimedOut(true)
+        optionsRef.current.onTimeout?.()
+      }, optionsRef.current.timeout ?? 30000)
     }
-  }, [isLoading, startLoading])
+  }, []) // stable
 
+  // Cleanup only on unmount — no deps that can change
   useEffect(() => {
-    return () => {
-      clearExistingTimeout()
-    }
-  }, [clearExistingTimeout])
+    return () => { clearTimer() }
+  }, [])
 
-  return {
-    isLoading,
-    isTimedOut,
-    startLoading,
-    stopLoading,
-    resetTimeout,
-  }
+  return { isLoading, isTimedOut, startLoading, stopLoading, resetTimeout }
 }

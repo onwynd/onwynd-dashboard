@@ -21,6 +21,58 @@ interface SettingsState {
   fetchDeviceFingerprints: () => Promise<void>;
 }
 
+function normalizeSettings(data: Record<string, unknown>): AppSettings {
+  return {
+    general: {
+      siteName: '',
+      supportEmail: '',
+      maintenanceMode: false,
+      baseCurrency: 'NGN',
+      ...((data.general as object) ?? {}),
+    },
+    ai: {
+      openaiKey: '',
+      anthropicKey: '',
+      model: 'gpt-4o',
+      temperature: 0.7,
+      isLive: false,
+      ...((data.ai as object) ?? {}),
+    },
+    features: {
+      eprescriptions: false,
+      secure_documents: false,
+      ai_chat: true,
+      video_calls: true,
+      gamification: true,
+      ...((data.features as object) ?? {}),
+    },
+    security: {
+      passwordPolicy: 'medium',
+      mfaEnabled: false,
+      sessionTimeout: 60,
+      ...((data.security as object) ?? {}),
+    },
+    env: {
+      paystackPublicKey: '',
+      paystackSecretKey: '',
+      flutterwavePublicKey: '',
+      flutterwaveSecretKey: '',
+      stripePublicKey: '',
+      stripeSecretKey: '',
+      klumpPublicKey: '',
+      klumpSecretKey: '',
+      sentryDsn: '',
+      ...((data.env as object) ?? {}),
+    },
+    ...(data.navigation  ? { navigation:  data.navigation  as AppSettings['navigation']  } : {}),
+    ...(data.financial   ? { financial:   data.financial   as AppSettings['financial']   } : {}),
+    ...(data.currency    ? { currency:    data.currency    as AppSettings['currency']    } : {}),
+    ...(data.branding    ? { branding:    data.branding    as AppSettings['branding']    } : {}),
+    ...(data.mail        ? { mail:        data.mail        as AppSettings['mail']        } : {}),
+    ...(data.gateways    ? { gateways:    data.gateways    as AppSettings['gateways']    } : {}),
+  };
+}
+
 export const useSettingsStore = create<SettingsState>((set) => ({
   settings: null,
   plans: [],
@@ -33,11 +85,10 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     set({ isLoading: true });
     try {
       const data = await settingsService.getSettings();
-      set({ settings: data });
+      set({ settings: normalizeSettings(data ?? {}) });
     } catch (error) {
       console.error("Failed to fetch settings", error);
-      // Don't set mock data, let the UI handle the error or empty state
-      set({ settings: null }); 
+      set({ settings: normalizeSettings({}) });
     } finally {
       set({ isLoading: false });
     }

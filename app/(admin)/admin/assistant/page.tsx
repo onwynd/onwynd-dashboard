@@ -295,8 +295,8 @@ export default function AdminAssistantPage() {
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('message', text);
-      formData.append('conversation_id', conversationId || '');
-      
+      if (conversationId) formData.append('conversation_id', conversationId);
+
       if (selectedFile) {
         formData.append('file', selectedFile);
         formData.append('file_type', fileType);

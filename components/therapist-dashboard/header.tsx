@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -107,6 +107,7 @@ export function TherapistHeader() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
+  const consecutiveFailures = useRef(0);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -114,6 +115,7 @@ export function TherapistHeader() {
         therapistService.getNotifications({ per_page: 10 }),
         therapistService.getUnreadNotificationCount(),
       ]);
+      consecutiveFailures.current = 0;
       const items: Notification[] = Array.isArray(list) ? list : [];
       setNotifications(items);
       const count = (countData as { count?: number; unread_count?: number })?.count
@@ -121,14 +123,25 @@ export function TherapistHeader() {
         ?? 0;
       setUnreadCount(count);
     } catch {
-      // silently fail
+      consecutiveFailures.current += 1;
     }
   }, []);
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30_000);
-    return () => clearInterval(interval);
+
+    // Back off exponentially on failures: 30s → 60s → 120s → max 300s
+    let timeoutId: NodeJS.Timeout;
+    const schedule = () => {
+      const failures = consecutiveFailures.current;
+      const delay = failures === 0 ? 30_000 : Math.min(30_000 * 2 ** failures, 300_000);
+      timeoutId = setTimeout(async () => {
+        await fetchNotifications();
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => clearTimeout(timeoutId);
   }, [fetchNotifications]);
 
   const handleMarkAllRead = async () => {

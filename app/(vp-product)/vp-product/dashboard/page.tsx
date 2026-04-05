@@ -58,7 +58,7 @@ export default function VpProductDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await client.get("/api/v1/product/dashboard");
+      const res = await client.get("/api/v1/product-manager/dashboard");
       setData(res.data?.data ?? res.data ?? {});
     } catch {
       setError("Unable to load product data. Please try again.");
@@ -182,34 +182,36 @@ export default function VpProductDashboardPage() {
           ) : deployments.length === 0 ? (
             <p className="text-sm text-muted-foreground">No recent deployments.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Version</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Environment</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {deployments.slice(0, 10).map((dep) => (
-                  <TableRow key={dep.id}>
-                    <TableCell className="text-sm font-mono font-medium">{dep.version}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                      {new Date(dep.date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="text-xs capitalize">{dep.environment}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`${DEPLOY_STATUS_COLORS[dep.status] ?? "bg-gray-100 text-gray-700"} text-xs capitalize`}>
-                        {dep.status}
-                      </Badge>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Version</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Environment</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {deployments.slice(0, 10).map((dep) => (
+                    <TableRow key={dep.id}>
+                      <TableCell className="text-sm font-mono font-medium">{dep.version}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {new Date(dep.date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-xs capitalize">{dep.environment}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${DEPLOY_STATUS_COLORS[dep.status] ?? "bg-gray-100 text-gray-700"} text-xs capitalize`}>
+                          {dep.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

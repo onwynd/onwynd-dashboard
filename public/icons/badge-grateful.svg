@@ -1,0 +1,43 @@
+<svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0"><defs><filter id="filter20_dd_22623_124034" x="-15.99590000000012" y="-8" width="104" height="104" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="8"/>
+<feGaussianBlur stdDeviation="8"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.0588235 0 0 0 0 0.0901961 0 0 0 0 0.164706 0 0 0 0.02 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_22623_124034"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="4"/>
+<feGaussianBlur stdDeviation="4"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.0588235 0 0 0 0 0.0901961 0 0 0 0 0.164706 0 0 0 0.03 0"/>
+<feBlend mode="normal" in2="effect1_dropShadow_22623_124034" result="effect2_dropShadow_22623_124034"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_22623_124034" result="shape"/>
+</filter><filter id="filter21_dd_22623_124034" x="6.00409999999988" y="18" width="60" height="60" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feMorphology radius="2" operator="erode" in="SourceAlpha" result="effect1_dropShadow_22623_124034"/>
+<feOffset dy="4"/>
+<feGaussianBlur stdDeviation="3"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.109804 0 0 0 0 0.0980392 0 0 0 0 0.0901961 0 0 0 0.03 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_22623_124034"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feMorphology radius="4" operator="erode" in="SourceAlpha" result="effect2_dropShadow_22623_124034"/>
+<feOffset dy="12"/>
+<feGaussianBlur stdDeviation="8"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.109804 0 0 0 0 0.0980392 0 0 0 0 0.0901961 0 0 0 0.08 0"/>
+<feBlend mode="normal" in2="effect1_dropShadow_22623_124034" result="effect2_dropShadow_22623_124034"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_22623_124034" result="shape"/>
+</filter><linearGradient id="paint18_linear_22623_124034" x1="36.03409999999985" y1="7.698999999999955" x2="36.03409999999985" y2="64.29999999999995" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F43F5E" stop-opacity="0"/>
+<stop offset="1" stop-color="#F43F5E"/>
+</linearGradient><linearGradient id="paint19_linear_22623_124034" x1="35.99409999999989" y1="22.576000000000022" x2="35.99409999999989" y2="50.12199999999996" gradientUnits="userSpaceOnUse">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="white" stop-opacity="0"/>
+</linearGradient><clipPath id="clip18_22623_124034">
+<rect width="72" height="72" fill="white" transform="translate(0.0040999999998803105, 0)"/>
+</clipPath></defs><g id="Frame_56" clip-path="url(#clip18_22623_124034)" filter="url(#filter20_dd_22623_124034)">
+<path id="Polygon_19" d="M31.6041,2.639c2.83,-1.633 6.32,-1.633 9.14,0l22.04,12.722c2.83,1.633 4.57,4.651 4.57,7.918v25.442c0,3.267 -1.74,6.285 -4.57,7.918l-22.04,12.722c-2.82,1.633 -6.31,1.633 -9.14,0l-22.03,-12.722c-2.83,-1.633 -4.57,-4.651 -4.57,-7.918v-25.442c0,-3.267 1.74,-6.285 4.57,-7.918z" fill="#FB7185"/>
+<path id="Polygon_20" d="M33.5641,8.457c1.53,-0.865 3.4,-0.865 4.93,0l20.53,11.634c1.56,0.887 2.53,2.547 2.53,4.346v23.125c0,1.799 -0.97,3.459 -2.53,4.346l-20.53,11.634c-1.53,0.865 -3.4,0.865 -4.93,0l-20.53,-11.634c-1.56,-0.887 -2.53,-2.547 -2.53,-4.346v-23.125c0,-1.799 0.97,-3.459 2.53,-4.346z" fill="#F43F5E" stroke="url(#paint18_linear_22623_124034)" stroke-width="1.10981"/>
+<g id="heart" filter="url(#filter21_dd_22623_124034)">
+<path id="Vector_76" d="M35.9941,24.646c3.58,-3.139 9.03,-3.003 12.45,0.412c3.56,3.558 3.56,9.328 0,12.886l-12.45,12.444l-12.44,-12.444c-3.56,-3.558 -3.56,-9.328 0,-12.886c3.42,-3.415 8.87,-3.552 12.44,-0.412z" fill="white" stroke="url(#paint19_linear_22623_124034)" stroke-width="0.375"/>
+</g>
+</g></svg>

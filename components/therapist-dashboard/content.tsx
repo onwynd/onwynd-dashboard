@@ -43,6 +43,11 @@ export function DashboardContent() {
   const [accepting, setAccepting] = useState(false);
   const [hasRead, setHasRead] = useState(false);
 
+  const dismissTermsForNow = () => {
+    localStorage.setItem("terms_remind_after", String(Date.now() + 24 * 60 * 60 * 1000));
+    setTermsAckOpen(false);
+  };
+
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [dismissedUntil, setDismissedUntil] = useState<number | null>(null);
@@ -138,7 +143,9 @@ export function DashboardContent() {
         setRejectionReason(v.rejection_reason ?? null);
       }
       if (!profile?.terms_accepted_at) {
-        setTermsAckOpen(true);
+        const remindAfter = localStorage.getItem("terms_remind_after");
+        const snoozed = remindAfter && Date.now() < Number(remindAfter);
+        if (!snoozed) setTermsAckOpen(true);
       }
     }).catch(() => null);
   }, [fetchStats, fetchFinancialFlow]);
@@ -224,13 +231,17 @@ export function DashboardContent() {
               </label>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <Button variant="ghost" onClick={dismissTermsForNow}>
+              Remind me later
+            </Button>
             <Button
               disabled={!hasRead || accepting}
               onClick={async () => {
                 setAccepting(true);
                 try {
                   await therapistService.acceptTerms();
+                  localStorage.removeItem("terms_remind_after");
                   setTermsAckOpen(false);
                 } catch {
                   // ignore

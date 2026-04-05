@@ -200,11 +200,14 @@ export async function proxy(req: NextRequest) {
 
   // Always pass through static / public assets
   if (isPublicPath(pathname)) {
-    // Redirect logged-in users away from auth pages
-    if (token && (pathname === '/login' || pathname === '/register' || pathname === '/sso')) {
-      const url = req.nextUrl.clone()
-      url.pathname = defaultDashboard(role)
-      return NextResponse.redirect(url)
+    // Redirect logged-in users away from auth pages — only when session is intact
+    if (token && allRoles.length > 0 && (pathname === '/login' || pathname === '/register' || pathname === '/sso')) {
+      const dest = defaultDashboard(role)
+      if (dest !== '/login') {
+        const url = req.nextUrl.clone()
+        url.pathname = dest
+        return NextResponse.redirect(url)
+      }
     }
     return NextResponse.next()
   }
@@ -252,7 +255,10 @@ export async function proxy(req: NextRequest) {
     if (!isShared) {
       const isPatientPath = !ALL_STAFF_PREFIXES.some((p) => pathname.startsWith(p))
       if (isPatientPath) {
-        return NextResponse.redirect(new URL(home, req.url))
+        const homeUrl = new URL(home, req.url)
+        if (homeUrl.pathname !== pathname) {
+          return NextResponse.redirect(homeUrl)
+        }
       }
     }
   }

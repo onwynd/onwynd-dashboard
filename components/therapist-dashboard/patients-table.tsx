@@ -144,7 +144,7 @@ export function PatientsTable() {
   useEffect(() => {
     startLoading();
     fetchPatients().finally(() => stopLoading());
-  }, [fetchPatients, startLoading, stopLoading]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadInvites = async () => {
     setLoadingInvites(true);

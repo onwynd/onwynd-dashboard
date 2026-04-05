@@ -1,0 +1,19 @@
+<svg viewBox="0 0 53 53" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0"><defs><filter id="filter0_d_22590_66191" x="-16" y="-8" width="85" height="85" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="8"/>
+<feGaussianBlur stdDeviation="8"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.607843 0 0 0 0 0.694118 0 0 0 0 0.403922 0 0 0 0.24 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_22590_66191"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_22590_66191" result="shape"/>
+</filter><linearGradient id="paint1_linear_22590_66191" x1="26.5" y1="0.5" x2="26.5" y2="52.5" gradientUnits="userSpaceOnUse">
+<stop stop-color="#9BB167"/>
+<stop offset="1" stop-color="#9BB167" stop-opacity="0"/>
+</linearGradient></defs><g id="Union_2" filter="url(#filter0_d_22590_66191)">
+<path d="M26.5,0.5c5.523,0 10,4.48 10,10c0,5.52 -4.477,10 -10,10c-5.523,0 -10,-4.48 -10,-10c0,-5.52 4.477,-10 10,-10z" fill="#9BB167" shape-rendering="crispEdges"/>
+<path d="M20.5,26.5c0,-5.52 -4.477,-10 -10,-10c-5.523,0 -10,4.48 -10,10c0,5.52 4.477,10 10,10c5.523,0 10,-4.48 10,-10z" fill="#9BB167" shape-rendering="crispEdges"/>
+<path d="M36.5,42.5c0,-5.52 -4.477,-10 -10,-10c-5.523,0 -10,4.48 -10,10c0,5.52 4.477,10 10,10c5.523,0 10,-4.48 10,-10z" fill="#9BB167" shape-rendering="crispEdges"/>
+<path d="M52.5,26.5c0,-5.52 -4.477,-10 -10,-10c-5.523,0 -10,4.48 -10,10c0,5.52 4.477,10 10,10c5.523,0 10,-4.48 10,-10z" fill="#9BB167" shape-rendering="crispEdges"/>
+<path d="M26.5,32.25c5.661,0 10.25,4.59 10.25,10.25c0,5.66 -4.589,10.25 -10.25,10.25c-5.661,0 -10.25,-4.59 -10.25,-10.25c0,-5.66 4.589,-10.25 10.25,-10.25zM10.5,16.25c5.661,0 10.25,4.59 10.25,10.25c0,5.66 -4.589,10.25 -10.25,10.25c-5.661,0 -10.25,-4.59 -10.25,-10.25c0,-5.66 4.589,-10.25 10.25,-10.25zM42.5,16.25c5.661,0 10.25,4.59 10.25,10.25c0,5.66 -4.589,10.25 -10.25,10.25c-5.661,0 -10.25,-4.59 -10.25,-10.25c0,-5.66 4.589,-10.25 10.25,-10.25zM26.5,0.25c5.661,0 10.25,4.59 10.25,10.25c0,5.66 -4.589,10.25 -10.25,10.25c-5.661,0 -10.25,-4.59 -10.25,-10.25c0,-5.66 4.589,-10.25 10.25,-10.25z" stroke="url(#paint1_linear_22590_66191)" stroke-width="0.5" shape-rendering="crispEdges"/>
+</g></svg>

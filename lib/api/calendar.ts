@@ -13,7 +13,7 @@ export interface Event {
 
 export const calendarService = {
   async getEvents(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/calendar/events', { params });
+    const response = await client.get('/api/v1/calendar/events', { params, suppressErrorToast: true });
     return response.data.data ?? response.data;
   },
 

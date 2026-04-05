@@ -156,7 +156,7 @@ export const institutionalService = {
   },
 
   async getOrganization() {
-    const response = await client.get('/api/v1/institutional/organizations');
+    const response = await client.get('/api/v1/institutional/organizations', { suppressErrorToast: true });
     const list = parseApiResponse(response);
     return (Array.isArray(list) ? list : [])[0] ?? null;
   },
@@ -167,7 +167,7 @@ export const institutionalService = {
   },
 
   async getBranding(organizationId: string | number) {
-    const response = await client.get(`/api/v1/institutional/organizations/${organizationId}/branding`);
+    const response = await client.get(`/api/v1/institutional/organizations/${organizationId}/branding`, { suppressErrorToast: true });
     return parseApiResponse(response) as { theme?: string; font?: string };
   },
 

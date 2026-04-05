@@ -193,7 +193,7 @@ export const settingsService = {
   },
 
   async getPlatformBranding(): Promise<{ theme: string; font: string }> {
-    const response = await client.get('/api/v1/admin/platform/branding');
+    const response = await client.get('/api/v1/admin/platform/branding', { suppressErrorToast: true });
     return response.data.data ?? response.data;
   },
 

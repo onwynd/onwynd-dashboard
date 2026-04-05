@@ -75,36 +75,38 @@ export default function PartnershipsPage() {
           <CardDescription>All current and pending strategic partnerships.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Partner</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Since</TableHead>
-                  <TableHead>Contribution</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockPartners.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-medium text-sm">{p.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 capitalize text-sm">
-                        {typeIcon[p.type]}
-                        {p.type}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.contactEmail}</TableCell>
-                    <TableCell className="text-sm">{p.since}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.contribution}</TableCell>
-                    <TableCell><Badge variant={statusVariant(p.status)}>{p.status}</Badge></TableCell>
+          <div className="overflow-x-auto">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Partner</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Since</TableHead>
+                    <TableHead>Contribution</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {mockPartners.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium text-sm">{p.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 capitalize text-sm">
+                          {typeIcon[p.type]}
+                          {p.type}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{p.contactEmail}</TableCell>
+                      <TableCell className="text-sm">{p.since}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{p.contribution}</TableCell>
+                      <TableCell><Badge variant={statusVariant(p.status)}>{p.status}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>

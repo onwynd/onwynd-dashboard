@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { BrandingSettings } from "@/components/admin-dashboard/settings/branding-settings";
 import { Loader2, Save, LogOut } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { institutionalService } from "@/lib/api/institutional";
+import { partnerService } from "@/lib/api/partner";
 import client from "@/lib/api/client";
 import {
   AlertDialog,
@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface OrgProfile {
-  id?: string | number;
   name: string;
   email: string;
   phone: string;
@@ -36,11 +35,10 @@ export default function PartnerSettingsPage() {
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    institutionalService.getOrganization().then((data) => {
+    partnerService.getProfile().then((data) => {
       if (data) {
         const d = data as Record<string, unknown>;
         setOrg({
-          id: d.id as string | number,
           name: (d.name as string) ?? "",
           email: (d.email as string) ?? "",
           phone: (d.phone as string) ?? "",
@@ -63,10 +61,9 @@ export default function PartnerSettingsPage() {
   };
 
   const save = async () => {
-    if (!org.id) return;
     setSaving(true);
     try {
-      await institutionalService.updateOrganization(org.id, {
+      await partnerService.updateProfile({
         name: org.name,
         email: org.email,
         phone: org.phone,
@@ -118,7 +115,7 @@ export default function PartnerSettingsPage() {
             />
           </div>
           <Separator />
-          <Button onClick={save} disabled={saving || !org.id}>
+          <Button onClick={save} disabled={saving}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             Save Changes
           </Button>
@@ -135,7 +132,6 @@ export default function PartnerSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Danger zone */}
       <Card className="border-red-200">
         <CardHeader>
           <CardTitle className="text-red-600">Danger Zone</CardTitle>

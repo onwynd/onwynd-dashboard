@@ -1,0 +1,17 @@
+<svg viewBox="0 0 136 64" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0"><g id="Icons">
+<g id="Button Icon_2">
+<rect x="0" y="0" width="64" height="64" rx="32" fill="white"/>
+<g id="Monotone email">
+<rect id="Vector_13" x="23" y="25" width="18" height="14" rx="7" stroke="#4B3425" stroke-width="2" stroke-linejoin="round"/>
+<path id="Vector_14" d="M38,26c0,0.7879 -0.1552,1.5681 -0.4567,2.2961c-0.3016,0.728 -0.7435,1.3894 -1.3007,1.9465c-0.5571,0.5572 -1.2185,0.9991 -1.9465,1.3007c-0.728,0.3015 -1.5082,0.4567 -2.2961,0.4567c-0.7879,0 -1.5681,-0.1552 -2.2961,-0.4567c-0.728,-0.3016 -1.3894,-0.7435 -1.9465,-1.3007c-0.5572,-0.5571 -0.9991,-1.2185 -1.3007,-1.9465c-0.3015,-0.728 -0.4567,-1.5082 -0.4567,-2.2961" stroke="#4B3425" stroke-width="2" stroke-linejoin="round"/>
+</g>
+</g>
+<g id="Button Icon_3">
+<rect x="72" y="0" width="64" height="64" rx="32" fill="white"/>
+<g id="Monotone telephone_2">
+<path id="Vector_15" d="M96,26c0,1.8385 0.362,3.659 1.066,5.3576c0.703,1.6985 1.734,3.2419 3.035,4.5419c1.3,1.3 2.843,2.3313 4.541,3.0348c1.699,0.7036 3.52,1.0657 5.358,1.0657" stroke="#4B3425" stroke-width="2" stroke-linejoin="round"/>
+<path id="Vector_16" d="M96,26c0,-1.6569 1.343,-3 3,-3c1.657,0 3,1.3431 3,3c0,1.6569 -1.343,3 -3,3c-1.657,0 -3,-1.3431 -3,-3z" stroke="#4B3425" stroke-width="2" stroke-linejoin="round"/>
+<path id="Vector_17" d="M107,37c0,-1.6569 1.343,-3 3,-3c1.657,0 3,1.3431 3,3c0,1.6569 -1.343,3 -3,3c-1.657,0 -3,-1.3431 -3,-3z" stroke="#4B3425" stroke-width="2" stroke-linejoin="round"/>
+</g>
+</g>
+</g></svg>

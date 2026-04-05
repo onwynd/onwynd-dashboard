@@ -76,7 +76,7 @@ export default function TherapistSettingsPage() {
       } else if (error?.response?.status === 403) {
         toast({ title: "Permission Error", description: "You don't have permission to view this profile", variant: "destructive" });
       } else if (error?.response?.status === 404) {
-        toast({ title: "Profile Not Found", description: "Profile could not be found", variant: "destructive" });
+        // No profile yet — new therapist. Show empty form silently.
       } else if (error?.response?.status >= 500) {
         toast({ title: "Server Error", description: "Server error occurred. Please try again later", variant: "destructive" });
       } else if (error?.message?.includes("Network")) {

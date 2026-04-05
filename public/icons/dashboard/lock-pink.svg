@@ -1,0 +1,12 @@
+<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0"><defs><clipPath id="clip9_22632_171187">
+<rect x="0" y="0" width="64" height="64" rx="32" fill="white"/>
+</clipPath></defs><g id="Superego lock_8">
+<g clip-path="url(#clip9_22632_171187)">
+<rect x="0" y="0" width="64" height="64" rx="32" fill="#F5F5F4"/>
+<rect id="Vector_81" x="16" y="0" width="32" height="32" rx="16" fill="#D6D3D1"/>
+<rect id="Vector_82" x="0" y="32" width="64" height="64" rx="32" fill="#E7E5E4"/>
+<path id="Vector_83" fill-rule="evenodd" clip-rule="evenodd" d="M29.333,64v-24h5.334v24z" fill="#D6D3D1"/>
+<path id="Vector_84" fill-rule="evenodd" clip-rule="evenodd" d="M21.333,40h21.334v5.333h-21.334z" fill="#F5F5F4"/>
+<path id="Vector_85" fill-rule="evenodd" clip-rule="evenodd" d="M16,50.667h32v5.333h-32z" fill="#F5F5F4"/>
+</g>
+</g></svg>

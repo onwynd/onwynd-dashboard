@@ -3,22 +3,22 @@ import { parseApiResponse } from './utils';
 
 export const therapistService = {
   async getDashboard() {
-    const response = await client.get('/api/v1/therapist/dashboard');
+    const response = await client.get('/api/v1/therapist/dashboard', { suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
   async getStats() {
-    const response = await client.get('/api/v1/therapist/stats');
+    const response = await client.get('/api/v1/therapist/stats', { suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
   async getFinancialFlow(period: string = 'monthly') {
-    const response = await client.get('/api/v1/therapist/financial-flow', { params: { period } });
+    const response = await client.get('/api/v1/therapist/financial-flow', { params: { period }, suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
   async getPatients(params?: unknown) {
-    const response = await client.get('/api/v1/therapist/patients', { params });
+    const response = await client.get('/api/v1/therapist/patients', { params, suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
@@ -47,7 +47,7 @@ export const therapistService = {
   },
 
   async getProfile() {
-    const response = await client.get('/api/v1/therapist/profile');
+    const response = await client.get('/api/v1/therapist/profile', { suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
@@ -77,7 +77,7 @@ export const therapistService = {
   },
 
   async getSessions(params?: unknown) {
-    const response = await client.get('/api/v1/therapist/sessions', { params });
+    const response = await client.get('/api/v1/therapist/sessions', { params, suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
@@ -88,12 +88,12 @@ export const therapistService = {
   },
 
   async getEarnings(params?: unknown) {
-    const response = await client.get('/api/v1/therapist/earnings', { params });
+    const response = await client.get('/api/v1/therapist/earnings', { params, suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
   async getNotes(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/therapist/notes', { params });
+    const response = await client.get('/api/v1/therapist/notes', { params, suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
@@ -113,12 +113,12 @@ export const therapistService = {
   },
 
   async getNotifications(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/therapist/notifications', { params });
+    const response = await client.get('/api/v1/therapist/notifications', { params, suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
   async getUnreadNotificationCount() {
-    const response = await client.get('/api/v1/therapist/notifications/unread-count');
+    const response = await client.get('/api/v1/therapist/notifications/unread-count', { suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
@@ -132,7 +132,7 @@ export const therapistService = {
   },
 
   async getAvailability() {
-    const response = await client.get('/api/v1/therapist/availability');
+    const response = await client.get('/api/v1/therapist/availability', { suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
@@ -158,8 +158,7 @@ export const therapistService = {
 
   //  Bank Account (Feature 1) 
   async getBankAccount() {
-    const response = await client.get('/api/v1/therapist/profile');
-    // Extract bank details from profile
+    const response = await client.get('/api/v1/therapist/profile', { suppressErrorToast: true });
     return response.data?.data?.bank_details ?? null;
   },
 
@@ -176,7 +175,7 @@ export const therapistService = {
   },
 
   async getPatientInvites() {
-    const response = await client.get('/api/v1/therapist/patient-invites');
+    const response = await client.get('/api/v1/therapist/patient-invites', { suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
@@ -192,7 +191,7 @@ export const therapistService = {
   },
 
   async getPayouts(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/therapist/earnings/payouts', { params });
+    const response = await client.get('/api/v1/therapist/earnings/payouts', { params, suppressErrorToast: true });
     return response.data?.data ?? response.data;
   },
 };

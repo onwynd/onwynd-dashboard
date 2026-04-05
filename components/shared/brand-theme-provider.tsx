@@ -6,10 +6,26 @@ import { applyBrandTheme, applyBrandFont, useBrandStore, type BrandTheme, type B
 import { institutionalService } from "@/lib/api/institutional";
 import { settingsService } from "@/lib/api/settings";
 
+const ORG_ROLES = new Set([
+  "institutional", "institution_admin", "university_admin",
+  "ngo_admin", "partner", "center",
+]);
+
+function isOrgUser(): boolean {
+  try {
+    const u = JSON.parse(localStorage.getItem("user") || "{}");
+    const role: string = u?.role?.slug ?? u?.role ?? "";
+    const allRoles: string[] = u?.all_roles ?? (role ? [role] : []);
+    return allRoles.some((r) => ORG_ROLES.has(r));
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Branding load priority (highest wins):
  *   1. Cookies — applied instantly to prevent flash
- *   2. Platform default — from GET /api/v1/platform/branding (admin-set)
+ *   2. Platform default — from GET /api/v1/admin/platform/branding (admin-set, silently skipped for non-admins)
  *   3. Org override — from GET /organizations/{id}/branding (institutional users only)
  */
 export function BrandThemeProvider({ children }: { children: React.ReactNode }) {
@@ -25,28 +41,26 @@ export function BrandThemeProvider({ children }: { children: React.ReactNode }) 
     const token = localStorage.getItem("auth_token");
     if (!token) return;
 
-    // 2. Load platform default for all authenticated users
+    const tryOrgBranding = () => {
+      if (!isOrgUser()) return;
+      institutionalService.getOrganization()
+        .then((org) => {
+          const orgId = (org as Record<string, unknown> | null)?.id as string | number | undefined;
+          if (orgId) syncFromApi(orgId);
+        })
+        .catch(() => {});
+    };
+
+    // 2. Load platform default — silently fails for non-admin users
     settingsService.getPlatformBranding()
       .then((platformBranding) => {
         applyBrandTheme((platformBranding.theme as BrandTheme) || "default");
         applyBrandFont((platformBranding.font as BrandFont) || "system");
-
-        // 3. Org users override platform branding with their own
-        return institutionalService.getOrganization()
-          .then((org) => {
-            const orgId = (org as Record<string, unknown> | null)?.id as string | number | undefined;
-            if (orgId) syncFromApi(orgId);
-          })
-          .catch(() => {});
+        tryOrgBranding();
       })
       .catch(() => {
-        // Platform branding unavailable — still try org branding
-        institutionalService.getOrganization()
-          .then((org) => {
-            const orgId = (org as Record<string, unknown> | null)?.id as string | number | undefined;
-            if (orgId) syncFromApi(orgId);
-          })
-          .catch(() => {});
+        // Not an admin — skip platform branding, still try org override
+        tryOrgBranding();
       });
   }, [syncFromApi]);
 

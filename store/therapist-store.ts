@@ -163,8 +163,8 @@ export const useTherapistStore = create<TherapistState>((set) => ({
     try {
       const data = await therapistService.getStats();
       set({ stats: data as TherapistStat[] || undefined });
-    } catch (error) {
-      console.error("Failed to fetch therapist stats:", error);
+    } catch {
+      // network/server error — silently ignore, stats stay undefined
     }
   },
 
@@ -177,8 +177,7 @@ export const useTherapistStore = create<TherapistState>((set) => ({
         ? (data as Patient[])
         : ((data as { data?: Patient[] })?.data ?? []);
       set({ patients: items, isLoadingPatients: false });
-    } catch (error) {
-      console.error("Failed to fetch therapist patients:", error);
+    } catch {
       set({ isLoadingPatients: false });
     }
   },
@@ -187,8 +186,7 @@ export const useTherapistStore = create<TherapistState>((set) => ({
     try {
       const data = await therapistService.getFinancialFlow(period);
       set({ financialFlow: data as FinancialFlowData[] || [] });
-    } catch (error) {
-      console.error("Failed to fetch therapist financial flow:", error);
+    } catch {
       set({ financialFlow: [] });
     }
   },
@@ -199,8 +197,7 @@ export const useTherapistStore = create<TherapistState>((set) => ({
       const notesData = data as TherapistState['notes'] | { data?: TherapistState['notes'] };
       const rows = Array.isArray(notesData) ? notesData : Array.isArray((notesData as { data?: TherapistState['notes'] })?.data) ? (notesData as { data: TherapistState['notes'] }).data : [];
       set({ notes: rows });
-    } catch (error) {
-      console.error("Failed to fetch therapist notes:", error);
+    } catch {
       set({ notes: [] });
     }
   },

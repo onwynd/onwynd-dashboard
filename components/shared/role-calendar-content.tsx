@@ -49,11 +49,6 @@ export interface RoleCalendarContentProps {
   quickSuggestions?: string[];
 }
 
-const TIME_SLOTS = [
-  "07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30",
-  "11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30",
-  "15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00",
-];
 
 function addMins(t: string, mins: number) {
   const [h, m] = t.split(":").map(Number);
@@ -313,7 +308,7 @@ export function RoleCalendarContent({
 
       {/* ── New Event Dialog ── */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[560px]">
           <DialogHeader>
             <DialogTitle>Create Event</DialogTitle>
           </DialogHeader>
@@ -346,37 +341,21 @@ export function RoleCalendarContent({
               />
             </div>
 
-            {/* Type + Duration row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1.5">
-                <Label>Type</Label>
-                <Select value={evType} onValueChange={(v) => v !== null && setEvType(v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {eventTypes.map((et) => (
-                      <SelectItem key={et.value} value={et.value}>{et.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Duration</Label>
-                <Select value={evDuration} onValueChange={(v) => v !== null && setEvDuration(v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15">15 min</SelectItem>
-                    <SelectItem value="30">30 min</SelectItem>
-                    <SelectItem value="45">45 min</SelectItem>
-                    <SelectItem value="60">1 hour</SelectItem>
-                    <SelectItem value="90">1.5 hours</SelectItem>
-                    <SelectItem value="120">2 hours</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Type row */}
+            <div className="grid gap-1.5">
+              <Label>Type</Label>
+              <Select value={evType} onValueChange={(v) => v !== null && setEvType(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {eventTypes.map((et) => (
+                    <SelectItem key={et.value} value={et.value}>{et.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Date + Time row */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Date + Time + Duration row */}
+            <div className="grid grid-cols-[1fr_auto_auto] gap-3">
               <div className="grid gap-1.5">
                 <Label>Date</Label>
                 <Popover open={dateOpen} onOpenChange={setDateOpen}>
@@ -399,11 +378,25 @@ export function RoleCalendarContent({
                 </Popover>
               </div>
               <div className="grid gap-1.5">
-                <Label>Time (UTC)</Label>
-                <Select value={evTime} onValueChange={(v) => v !== null && setEvTime(v)}>
-                  <SelectTrigger><SelectValue placeholder="Select time" /></SelectTrigger>
+                <Label>Time</Label>
+                <input
+                  type="time"
+                  value={evTime}
+                  onChange={(e) => setEvTime(e.target.value)}
+                  className="h-9 w-[120px] rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Duration</Label>
+                <Select value={evDuration} onValueChange={(v) => v !== null && setEvDuration(v)}>
+                  <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {TIME_SLOTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    <SelectItem value="15">15 min</SelectItem>
+                    <SelectItem value="30">30 min</SelectItem>
+                    <SelectItem value="45">45 min</SelectItem>
+                    <SelectItem value="60">1 hour</SelectItem>
+                    <SelectItem value="90">1.5 hours</SelectItem>
+                    <SelectItem value="120">2 hours</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
