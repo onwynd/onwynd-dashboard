@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import {
   Area,
@@ -13,11 +14,13 @@ import {
 import { useTechStore } from "@/store/tech-store";
 
 export function SystemHealthChart() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const axisColor = isDark ? "#71717a" : "#a1a1aa";
   const gridColor = isDark ? "#27272a" : "#f4f4f5";
-  
+
   const data = useTechStore((state) => state.chartData);
 
   return (
@@ -36,7 +39,7 @@ export function SystemHealthChart() {
         </div>
       </div>
       <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
               <linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
@@ -96,7 +99,7 @@ export function SystemHealthChart() {
               name="Latency (ms)"
             />
           </AreaChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
     </div>
   );

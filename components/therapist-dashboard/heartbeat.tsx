@@ -19,7 +19,7 @@ const HEARTBEAT_INTERVAL_MS = 90_000; // 90 seconds
 
 async function pingHeartbeat(): Promise<void> {
   try {
-    await client.post("/api/v1/me/heartbeat");
+    await client.post("/api/v1/me/heartbeat", {}, { suppressErrorToast: true });
   } catch {
     // Silently swallow — heartbeat is best-effort.
     // The mark-offline cron will catch it within 5 minutes if this fails.
@@ -28,7 +28,7 @@ async function pingHeartbeat(): Promise<void> {
 
 async function goOffline(): Promise<void> {
   try {
-    await client.post("/api/v1/therapist/status/offline");
+    await client.post("/api/v1/therapist/status/offline", {}, { suppressErrorToast: true });
   } catch {
     // Best-effort — heartbeat timeout will mark offline anyway
   }

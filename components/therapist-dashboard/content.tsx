@@ -150,36 +150,6 @@ export function DashboardContent() {
     }).catch(() => null);
   }, [fetchStats, fetchFinancialFlow]);
 
-  // ── Heartbeat: keep therapist marked online while dashboard is open ──────────
-  // Calls POST /api/v1/me/heartbeat every 90 seconds.
-  // The scheduler command users:mark-offline runs every 5 min and flips
-  // is_online=false for anyone whose last_seen_at is older than 30 minutes.
-  // On tab close/unload, sends a synchronous beacon so the therapist goes
-  // offline immediately rather than waiting up to 30 min.
-  useEffect(() => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
-    const ping = () => {
-      fetch(`${apiBase}/api/v1/me/heartbeat`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      }).catch(() => null); // silent — never block UI on a failed heartbeat
-    };
-
-    ping(); // immediate ping on mount
-    const intervalId = setInterval(ping, 90_000); // every 90 seconds
-
-    // On unload: sendBeacon is fire-and-forget and survives tab close —
-    // marks the therapist offline immediately rather than waiting 30 min.
-    const handleUnload = () => navigator.sendBeacon(`${apiBase}/api/v1/me/heartbeat`);
-    window.addEventListener("beforeunload", handleUnload);
-
-    return () => {
-      clearInterval(intervalId);
-      window.removeEventListener("beforeunload", handleUnload);
-    };
-  }, []);
-
   const activeOnboarding =
     ready &&
     !onboardingComplete &&

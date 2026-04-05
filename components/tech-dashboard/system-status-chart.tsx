@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import {
   Line,
@@ -14,6 +15,8 @@ import {
 import { useTechStore } from "@/store/tech-store";
 
 export function SystemStatusChart() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const { resolvedTheme } = useTheme();
   const chartData = useTechStore((state) => state.chartData);
   const isDark = resolvedTheme === "dark";
@@ -24,7 +27,7 @@ export function SystemStatusChart() {
     <div className="flex-1 min-w-[300px] p-6 rounded-xl border bg-card">
       <h3 className="text-lg font-semibold mb-6">System Performance (24h)</h3>
       <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
             <XAxis
@@ -65,7 +68,7 @@ export function SystemStatusChart() {
               name="Latency (ms)"
             />
           </LineChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
     </div>
   );

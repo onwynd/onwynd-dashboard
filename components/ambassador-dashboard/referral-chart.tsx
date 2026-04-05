@@ -19,11 +19,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useAmbassadorStore } from "@/store/ambassador-store";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export function ReferralChart() {
   const chartData = useAmbassadorStore((state) => state.chartData);
   const fetchChartData = useAmbassadorStore((state) => state.fetchChartData);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetchChartData("6months");
@@ -43,7 +46,7 @@ export function ReferralChart() {
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
@@ -105,7 +108,7 @@ export function ReferralChart() {
                 className="stroke-muted-foreground"
               />
             </LineChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
         </div>
       </CardContent>
     </Card>

@@ -61,7 +61,8 @@ export default function TherapistReviewsPage() {
       const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
       setTherapists(list);
     } catch {
-      toast({ title: "Error", description: "Failed to load therapist reviews.", variant: "destructive" });
+      // 403 = insufficient role — silently show empty state rather than toasting
+      setTherapists([]);
     } finally {
       setLoading(false);
     }

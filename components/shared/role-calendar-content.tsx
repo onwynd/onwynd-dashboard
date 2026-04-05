@@ -341,17 +341,26 @@ export function RoleCalendarContent({
               />
             </div>
 
-            {/* Type row */}
+            {/* Type row — button group avoids Base UI / Radix focus-trap conflict */}
             <div className="grid gap-1.5">
               <Label>Type</Label>
-              <Select value={evType} onValueChange={(v) => v !== null && setEvType(v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {eventTypes.map((et) => (
-                    <SelectItem key={et.value} value={et.value}>{et.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-1.5">
+                {eventTypes.map((et) => (
+                  <button
+                    key={et.value}
+                    type="button"
+                    onClick={() => setEvType(et.value)}
+                    className={cn(
+                      "text-xs px-3 py-1.5 rounded-md border transition-colors",
+                      evType === et.value
+                        ? et.badge + " border-transparent font-medium"
+                        : "border-border bg-background hover:bg-muted text-foreground"
+                    )}
+                  >
+                    {et.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Date + Time + Duration row */}

@@ -211,7 +211,7 @@ export const adminService = {
 
   // Therapists (full list)
   async getTherapists(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/admin/therapists', { params });
+    const response = await client.get('/api/v1/admin/therapists', { params, suppressErrorToast: true });
     return response.data.data ?? response.data;
   },
 

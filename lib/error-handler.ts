@@ -1,15 +1,26 @@
 import type { AxiosError } from 'axios'
 import { toast } from '@/components/ui/use-toast'
 
-// Deduplication: track last-shown message + timestamp to prevent toast floods
-const _lastToast: { key: string; at: number } = { key: '', at: 0 }
-const DEDUP_MS = 4000
+// Deduplication: stored on window to survive HMR module re-evaluation
+// Network errors are suppressed for 60s; other errors for 8s
+const NETWORK_DEDUP_MS = 60_000
+const DEFAULT_DEDUP_MS = 8_000
+
+function getDedup(): Record<string, number> {
+  if (typeof window === 'undefined') return {}
+  if (!(window as Window & { __toastDedup?: Record<string, number> }).__toastDedup) {
+    (window as Window & { __toastDedup?: Record<string, number> }).__toastDedup = {}
+  }
+  return (window as Window & { __toastDedup?: Record<string, number> }).__toastDedup!
+}
 
 function showToast(description: string) {
   const now = Date.now()
-  if (description === _lastToast.key && now - _lastToast.at < DEDUP_MS) return
-  _lastToast.key = description
-  _lastToast.at = now
+  const dedup = getDedup()
+  const isNetworkError = description.startsWith('Network error')
+  const dedupMs = isNetworkError ? NETWORK_DEDUP_MS : DEFAULT_DEDUP_MS
+  if (dedup[description] && now - dedup[description] < dedupMs) return
+  dedup[description] = now
   toast({ description, variant: 'destructive', duration: 6000 })
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,10 +52,15 @@ function useFormatValue(value: number | null | undefined, format: KpiDefinition[
 }
 
 function SparkLine({ data }: { data: number[] }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const points = data.map((v, i) => ({ i, v }));
   const min = Math.min(...data);
   const max = Math.max(...data);
   const isFlat = min === max;
+
+  if (!mounted) return <div className="h-full" />;
 
   return (
     <ResponsiveContainer width="100%" height={40}>

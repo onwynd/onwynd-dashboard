@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { AlertBanner } from "./alert-banner";
 import { StatsCards } from "./stats-cards";
 import { PatientsTable } from "./patients-table";
 import { useClinicalStore } from "@/store/clinical-store";
 import { cn } from "@/lib/utils";
-import client from "@/lib/api/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -169,94 +168,23 @@ export function DashboardContent() {
   const showTable = useClinicalStore((state) => state.showTable);
   const layoutDensity = useClinicalStore((state) => state.layoutDensity);
   const fetchStats = useClinicalStore((state) => state.fetchStats);
-
-  const [distressQueue, setDistressQueue] = useState<DistressQueueItem[]>([]);
-  const [loadingDistress, setLoadingDistress] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const distressQueue = useClinicalStore((state) => state.distressQueue);
+  const loading = useClinicalStore((state) => state.loading);
+  const resolveDistressItem = useClinicalStore((state) => state.resolveDistressItem);
 
   useEffect(() => {
     fetchStats();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Fetch distress queue data periodically
-  useEffect(() => {
-    const fetchDistressQueue = async () => {
-      try {
-        setLoadingDistress(true);
-        setError(null);
-
-        const response = await client.get('/api/v1/clinical-advisor/distress-queue');
-        setDistressQueue(response.data?.data || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoadingDistress(false);
-      }
-    };
-
-    fetchDistressQueue();
-    const interval = setInterval(fetchDistressQueue, 60000); // Refresh every 1 minute
+    const interval = setInterval(fetchStats, 60000);
     return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleResolveDistressItem = async (id: string) => {
     try {
-      await client.patch(`/api/v1/clinical-advisor/distress-queue/${id}/resolve`, {
-        resolution_type: 'resolved',
-        notes: 'Reviewed and resolved by clinical advisor',
-      });
-      setDistressQueue(prev => prev.filter(item => item.id !== id));
-    } catch (err) {
-      console.error('Failed to resolve distress item:', err);
-      alert('Failed to resolve distress item. Please try again.');
+      await resolveDistressItem(id, 'resolved', 'Reviewed and resolved by clinical advisor');
+    } catch {
+      // error is set in store; no alert needed
     }
   };
-
-  if (loadingDistress) {
-    return (
-      <main
-        className={cn(
-          "w-full flex-1 overflow-auto",
-          layoutDensity === "compact" && "p-2 sm:p-4 space-y-4",
-          layoutDensity === "default" && "p-4 sm:p-6 space-y-6 sm:space-y-8",
-          layoutDensity === "comfortable" && "p-6 sm:p-8 space-y-8 sm:space-y-10"
-        )}
-      >
-        {showAlertBanner && <AlertBanner />}
-        {showStatsCards && <StatsCards />}
-        <DistressQueueSkeleton />
-        {showTable && <PatientsTable />}
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main
-        className={cn(
-          "w-full flex-1 overflow-auto",
-          layoutDensity === "compact" && "p-2 sm:p-4 space-y-4",
-          layoutDensity === "default" && "p-4 sm:p-6 space-y-6 sm:space-y-8",
-          layoutDensity === "comfortable" && "p-6 sm:p-8 space-y-8 sm:space-y-10"
-        )}
-      >
-        {showAlertBanner && <AlertBanner />}
-        {showStatsCards && <StatsCards />}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-500" />
-              Distress Queue Error
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-red-600">{error}</p>
-          </CardContent>
-        </Card>
-        {showTable && <PatientsTable />}
-      </main>
-    );
-  }
 
   return (
     <main
@@ -269,8 +197,10 @@ export function DashboardContent() {
     >
       {showAlertBanner && <AlertBanner />}
       {showStatsCards && <StatsCards />}
-      
-      {distressQueue.length === 0 ? (
+
+      {loading ? (
+        <DistressQueueSkeleton />
+      ) : distressQueue.length === 0 ? (
         <EmptyDistressQueue />
       ) : (
         <Card>
@@ -285,7 +215,7 @@ export function DashboardContent() {
               {distressQueue.map((item) => (
                 <DistressQueueItem
                   key={item.id}
-                  item={item}
+                  item={item as DistressQueueItem}
                   onResolve={handleResolveDistressItem}
                 />
               ))}
@@ -293,7 +223,7 @@ export function DashboardContent() {
           </CardContent>
         </Card>
       )}
-      
+
       {showTable && <PatientsTable />}
     </main>
   );

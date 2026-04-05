@@ -118,6 +118,9 @@ export function FinancialFlowChart() {
   const financialFlow = useTherapistStore((state) => state.financialFlow);
   const fetchFinancialFlow = useTherapistStore((state) => state.fetchFinancialFlow);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
     fetchFinancialFlow(period);
   }, [fetchFinancialFlow, period]);
@@ -292,7 +295,7 @@ export function FinancialFlowChart() {
       </div>
 
       <div className="h-[250px] sm:h-[280px] px-2 pb-4">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+        {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           {chartType === "bar" ? (
             <BarChart data={financialFlow} barGap={4}>
               <defs>
@@ -486,7 +489,7 @@ export function FinancialFlowChart() {
               )}
             </AreaChart>
           )}
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
     </div>
   );

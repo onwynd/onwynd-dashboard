@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,8 @@ interface ChartCardProps {
 export function ChartCard({ title = "Patient Visits", data, barColor }: ChartCardProps) {
   const { chartData } = useHealthStore();
   const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
 
@@ -97,7 +99,7 @@ export function ChartCard({ title = "Patient Visits", data, barColor }: ChartCar
       </div>
 
       <div className="h-[250px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height="100%">
           <BarChart data={displayData} barGap={8}>
             <CartesianGrid
               vertical={false}
@@ -131,7 +133,7 @@ export function ChartCard({ title = "Patient Visits", data, barColor }: ChartCar
               maxBarSize={40}
             />
           </BarChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
     </div>
   );

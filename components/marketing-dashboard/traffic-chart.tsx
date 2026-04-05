@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -20,6 +21,8 @@ import {
 } from "recharts";
 
 export function TrafficChart() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const data = useMarketingStore((state) => state.chartData);
 
   return (
@@ -31,7 +34,7 @@ export function TrafficChart() {
         </CardDescription>
       </CardHeader>
       <CardContent className="pl-2">
-        <ResponsiveContainer width="100%" height={350}>
+        {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height={350}>
           <AreaChart data={data}>
             <defs>
               <linearGradient id="colorFacebook" x1="0" y1="0" x2="0" y2="1">
@@ -91,7 +94,7 @@ export function TrafficChart() {
               name="LinkedIn"
             />
           </AreaChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </CardContent>
     </Card>
   );

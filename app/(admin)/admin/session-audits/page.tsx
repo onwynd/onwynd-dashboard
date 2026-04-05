@@ -63,20 +63,24 @@ function RiskBar({ score }: { score: number | null }) {
 }
 
 export default function SessionAuditsPage() {
-  const [audits, setAudits]     = useState<AuditLog[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [status, setStatus]     = useState<string>("all");
-  const [search, setSearch]     = useState("");
+  const [audits, setAudits]         = useState<AuditLog[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [unavailable, setUnavailable] = useState(false);
+  const [status, setStatus]         = useState<string>("all");
+  const [search, setSearch]         = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
+    setUnavailable(false);
     try {
       const params: Record<string, string> = {};
       if (status !== "all") params.status = status;
-      const res = await client.get("/api/v1/admin/session-audits", { params });
+      const res = await client.get("/api/v1/admin/session-audits", { params, suppressErrorToast: true });
       const data = res.data?.data ?? res.data;
       setAudits(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []);
-    } catch {
+    } catch (err: any) {
+      const s = err?.response?.status;
+      if (s === 404 || s === undefined) setUnavailable(true);
       setAudits([]);
     } finally {
       setLoading(false);
@@ -97,6 +101,13 @@ export default function SessionAuditsPage() {
       <PageHeader
         title="AI Session Audits"
       />
+
+      {unavailable && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="size-4 shrink-0" />
+          <span>AI session audit endpoint is not yet available on this server. Deploy the latest backend to enable this feature.</span>
+        </div>
+      )}
 
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

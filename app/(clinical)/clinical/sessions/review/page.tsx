@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Activity, RefreshCw, Star, User, Clock } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
-import client from "@/lib/api/client";
+import { clinicalService } from "@/lib/api/clinical";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -38,13 +38,22 @@ export default function SessionReviewPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await client.get("/api/v1/admin/sessions", {
-        params: { per_page: 50, sort: "-started_at" },
-      });
-      const data = res.data?.data ?? res.data;
-      setSessions(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []);
+      const data = await clinicalService.getReviews({ per_page: 50, sort: "-created_at" });
+      const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+      // Map clinical review shape → Session display shape
+      setSessions(rows.map((r: Record<string, unknown>) => ({
+        uuid:             (r.uuid ?? r.session_id ?? r.id) as string,
+        patient_name:     (r.patient_name ?? (r.user as Record<string,unknown>)?.first_name) as string | undefined,
+        therapist_name:   (r.therapist_name ?? (r.therapist as Record<string,unknown>)?.first_name) as string | undefined,
+        status:           (r.review_status ?? r.status ?? "pending") as string,
+        started_at:       (r.created_at ?? r.started_at) as string | undefined,
+        ended_at:         r.ended_at as string | undefined,
+        duration_minutes: r.duration_minutes as number | undefined,
+        rating:           r.rating as number | undefined,
+        flagged:          r.review_status === "flagged" || r.review_status === "escalated",
+      })));
     } catch {
-      toast({ title: "Error", description: "Failed to load sessions.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to load session reviews.", variant: "destructive" });
     } finally {
       setLoading(false);
     }

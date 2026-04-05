@@ -41,7 +41,7 @@ export default function ClinicalCalendarPage() {
         <RoleCalendarContent
           heading="Clinical Calendar"
           subheading="Your reviews, supervision sessions, and personal appointments."
-          notifBasePath="/api/v1/clinical-advisor"
+          notifBasePath="/api/v1"
           eventTypes={EVENT_TYPES}
           quickSuggestions={QUICK_SUGGESTIONS}
         />

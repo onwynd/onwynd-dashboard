@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import {
   Bar,
@@ -104,6 +104,8 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
 export function RevenueFlowChart() {
   const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [period, setPeriod] = useState<TimePeriod>("6months");
   const [showGrid, setShowGrid] = useState(true);
@@ -350,7 +352,7 @@ export function RevenueFlowChart() {
         </div>
 
         <div className="flex-1 h-[180px] sm:h-[200px] lg:h-[240px] min-w-0">
-          <ResponsiveContainer width="100%" height="100%">
+          {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height="100%">
             {chartType === "bar" ? (
               <BarChart data={chartData} barGap={2}>
                 <defs>
@@ -537,7 +539,7 @@ export function RevenueFlowChart() {
                 )}
               </AreaChart>
             )}
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
         </div>
       </div>
     </div>

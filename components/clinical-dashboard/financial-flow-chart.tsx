@@ -107,12 +107,15 @@ export function FinancialFlowChart() {
   const financialFlow = useClinicalStore((state) => state.financialFlow);
   const fetchFinancialFlow = useClinicalStore((state) => state.fetchFinancialFlow);
 
+  const [mounted, setMounted] = useState(false);
   const [chartType, setChartType] = useState<ChartType>("line");
   const [period, setPeriod] = useState<TimePeriod>("year");
   const [showGrid, setShowGrid] = useState(true);
   const [showMoneyIn, setShowMoneyIn] = useState(true);
   const [showMoneyOut, setShowMoneyOut] = useState(true);
   const [smoothCurve, setSmoothCurve] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetchFinancialFlow(period);
@@ -291,7 +294,7 @@ export function FinancialFlowChart() {
       </div>
 
       <div className="h-[250px] sm:h-[280px] px-2 pb-4">
-        <ResponsiveContainer width="100%" height="100%">
+        {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height="100%">
           {chartType === "bar" ? (
             <BarChart data={chartData} barGap={4}>
               <defs>
@@ -485,7 +488,7 @@ export function FinancialFlowChart() {
               )}
             </AreaChart>
           )}
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
     </div>
   );

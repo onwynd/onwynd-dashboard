@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,8 @@ export function ChartCard() {
   const { resolvedTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   // Utiliser resolvedTheme pour gérer le thème système
   // resolvedTheme sera undefined jusqu'au montage, donc on utilise light par défaut
@@ -110,7 +112,7 @@ export function ChartCard() {
       </div>
 
       <div className="relative pl-8">
-        <ResponsiveContainer width="100%" height={237}>
+        {!mounted ? <div style={{ height: 237 }} /> : <ResponsiveContainer width="100%" height={237}>
           <BarChart
             data={chartData}
             margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
@@ -214,7 +216,7 @@ export function ChartCard() {
               barSize={30}
             />
           </BarChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
     </div>
   );

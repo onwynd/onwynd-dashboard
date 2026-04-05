@@ -134,8 +134,7 @@ export const useHRStore = create<HRState>((set) => ({
     try {
       const data = await hrService.getStats();
       set({ stats: data as HRStat[] | undefined });
-    } catch (error) {
-      console.error("Failed to fetch HR stats:", error);
+    } catch {
       set({ stats: [] });
     }
   },
@@ -143,17 +142,14 @@ export const useHRStore = create<HRState>((set) => ({
   fetchEmployees: async (params) => {
     try {
       const data = await hrService.getEmployees(params);
-      // Handle case where data might be an empty object or not an array
       if (Array.isArray(data)) {
         set({ employees: data });
       } else if (data && typeof data === 'object' && Object.keys(data).length > 0) {
-        // If it's a non-empty object, try to extract array data or convert to array
         set({ employees: data as any });
       } else {
         set({ employees: [] });
       }
-    } catch (error) {
-      console.error("Failed to fetch employees:", error);
+    } catch {
       set({ employees: [] });
     }
   },
@@ -161,17 +157,14 @@ export const useHRStore = create<HRState>((set) => ({
   fetchPayrolls: async (params) => {
     try {
       const data = await hrService.getPayrolls(params);
-      // Handle case where data might be an empty object or not an array
       if (Array.isArray(data)) {
         set({ payrolls: data });
       } else if (data && typeof data === 'object' && Object.keys(data).length > 0) {
-        // If it's a non-empty object, try to extract array data or convert to array
         set({ payrolls: data as any });
       } else {
         set({ payrolls: [] });
       }
-    } catch (error) {
-      console.error("Failed to fetch payrolls:", error);
+    } catch {
       set({ payrolls: [] });
     }
   },
@@ -179,17 +172,14 @@ export const useHRStore = create<HRState>((set) => ({
   fetchLeaveRequests: async (params) => {
     try {
       const data = await hrService.getLeaveRequests(params);
-      // Handle case where data might be an empty object or not an array
       if (Array.isArray(data)) {
         set({ leaveRequests: data });
       } else if (data && typeof data === 'object' && Object.keys(data).length > 0) {
-        // If it's a non-empty object, try to extract array data or convert to array
         set({ leaveRequests: data as any });
       } else {
         set({ leaveRequests: [] });
       }
-    } catch (error) {
-      console.error("Failed to fetch HR leave requests:", error);
+    } catch {
       set({ leaveRequests: [] });
     }
   },
@@ -198,8 +188,7 @@ export const useHRStore = create<HRState>((set) => ({
     try {
       const data = await hrService.getChartData(period);
       set({ financialFlow: data as FinancialFlowData[] | undefined });
-    } catch (error) {
-      console.error("Failed to fetch HR financial flow:", error);
+    } catch {
       set({ financialFlow: [] });
     }
   },

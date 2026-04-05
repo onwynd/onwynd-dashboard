@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,10 +25,13 @@ import {
 export function RevenueChart() {
   const data = useFinanceStore((state) => state.revenueData);
   const fetchRevenueData = useFinanceStore((state) => state.fetchRevenueData);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     fetchRevenueData("6months");
   }, []); // Empty dependency array - fetchRevenueData is a stable Zustand action
+
+  useEffect(() => { setMounted(true); }, []);
 
   if (!data || data.length === 0) {
     return (
@@ -65,7 +68,7 @@ export function RevenueChart() {
         </CardDescription>
       </CardHeader>
       <CardContent className="pl-2">
-        <ResponsiveContainer width="100%" height={350}>
+        {!mounted ? <div className="h-[350px]" /> : <ResponsiveContainer width="100%" height={350}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
@@ -102,7 +105,7 @@ export function RevenueChart() {
               className="fill-rose-500"
             />
           </BarChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </CardContent>
     </Card>
   );

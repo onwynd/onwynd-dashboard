@@ -98,11 +98,14 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 
 export function FinancialFlowChart() {
   const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("year");
-  
+
   const financialFlow = usePartnerStore((state) => state.financialFlow);
   const fetchFinancialFlow = usePartnerStore((state) => state.fetchFinancialFlow);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetchFinancialFlow(selectedPeriod);
@@ -386,9 +389,9 @@ export function FinancialFlowChart() {
         </div>
       </div>
       <div className="p-6 pl-2">
-        <ResponsiveContainer width="100%" height={350} minWidth={0} minHeight={0}>
+        {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height={350} minWidth={0} minHeight={0}>
           {renderChart()}
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
     </div>
   );

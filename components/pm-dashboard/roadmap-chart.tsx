@@ -18,11 +18,14 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export function RoadmapChart() {
   const data = usePMStore((state) => state.roadmapData);
   const fetchRoadmap = usePMStore((state) => state.fetchRoadmap);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetchRoadmap();
@@ -37,7 +40,7 @@ export function RoadmapChart() {
         </CardDescription>
       </CardHeader>
       <CardContent className="pl-2">
-        <ResponsiveContainer width="100%" height={350}>
+        {!mounted ? <div style={{ height: 350 }} /> : <ResponsiveContainer width="100%" height={350}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
@@ -73,7 +76,7 @@ export function RoadmapChart() {
               className="fill-emerald-500"
             />
           </BarChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </CardContent>
     </Card>
   );

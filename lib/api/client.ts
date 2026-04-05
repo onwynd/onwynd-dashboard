@@ -7,6 +7,7 @@ import { parseApiResponse } from "./utils";
 const client = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
   withCredentials: true,
+  timeout: 15_000, // 15 s — prevents requests hanging until browser TCP timeout (~2 min)
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",

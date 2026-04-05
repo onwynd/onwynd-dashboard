@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -33,6 +33,8 @@ const timeRangeLabels = {
 type TimeRange = keyof typeof timeRangeLabels;
 
 export function LeadSourcesChart() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [timeRange, setTimeRange] = useState<TimeRange>("30days");
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
   const [showLabels, setShowLabels] = useState(true);
@@ -108,7 +110,7 @@ export function LeadSourcesChart() {
 
       <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
         <div className="relative shrink-0 size-[220px]">
-          <ResponsiveContainer width="100%" height="100%">
+          {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               {(() => {
                 const interactiveProps = {
@@ -135,7 +137,7 @@ export function LeadSourcesChart() {
                 );
               })()}
             </PieChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-lg sm:text-xl font-semibold">
               {totalLeads.toLocaleString()}

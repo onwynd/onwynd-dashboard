@@ -74,8 +74,8 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
     try {
       const data = await calendarService.getEvents(params);
       set({ events: data });
-    } catch (error) {
-      console.error("Failed to fetch events:", error);
+    } catch {
+      // silently fail — calendar may not be available for all roles
     }
   },
 

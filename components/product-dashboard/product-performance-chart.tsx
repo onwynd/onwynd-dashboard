@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useProductStore } from "@/store/product-store";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export function ProductPerformanceChart() {
   const { resolvedTheme } = useTheme();
@@ -22,6 +22,9 @@ export function ProductPerformanceChart() {
   const axisColor = isDark ? "#71717a" : "#a1a1aa";
   const gridColor = isDark ? "#27272a" : "#f4f4f5";
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
     fetchChartData("month");
   }, [fetchChartData]);
@@ -30,7 +33,7 @@ export function ProductPerformanceChart() {
     <div className="flex-1 min-w-[300px] p-6 rounded-xl border bg-card">
       <h3 className="text-lg font-semibold mb-6">Sales Performance</h3>
       <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
             <XAxis
@@ -58,7 +61,7 @@ export function ProductPerformanceChart() {
             />
             <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Revenue" />
           </BarChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
     </div>
   );

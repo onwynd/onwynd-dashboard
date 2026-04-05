@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, ChartLine } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -9,6 +9,9 @@ import { useComplianceStore } from "@/store/compliance-store";
 export function AuditChart() {
   const auditData = useComplianceStore((state) => state.auditData);
   const fetchAuditData = useComplianceStore((state) => state.fetchAuditData);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetchAuditData();
@@ -29,7 +32,7 @@ export function AuditChart() {
       </div>
 
       <div className="flex-1 w-full min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
+        {!mounted ? <div className="h-full" /> : <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={auditData}
@@ -45,7 +48,7 @@ export function AuditChart() {
               ))}
             </Pie>
           </PieChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
 
       <div className="flex flex-wrap justify-center gap-4">
