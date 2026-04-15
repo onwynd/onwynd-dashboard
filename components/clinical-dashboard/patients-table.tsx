@@ -89,7 +89,7 @@ export function PatientsTable() {
   const hasActiveFilters = departmentFilter !== "all" || statusFilter !== "all";
 
   const filteredPatients = React.useMemo(() => {
-    const filtered = (patients || []).filter((patient) => {
+    return (patients || []).filter((patient) => {
       const fullName = `${patient.first_name} ${patient.last_name}`;
       const matchesSearch =
         fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -105,13 +105,6 @@ export function PatientsTable() {
 
       return matchesSearch && matchesDepartment && matchesStatus;
     });
-
-    console.log("Filtered patients count:", filtered.length);
-    console.log("Search query:", searchQuery);
-    console.log("Department filter:", departmentFilter);
-    console.log("Status filter:", statusFilter);
-
-    return filtered;
   }, [patients, searchQuery, departmentFilter, statusFilter]);
 
 
@@ -224,7 +217,7 @@ export function PatientsTable() {
 
           <div className="hidden sm:block w-px h-6 bg-border" />
 
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2 min-h-[44px] min-w-[44px]">
             <FileInput className="size-4" />
             Import
           </Button>

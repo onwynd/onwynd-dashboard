@@ -34,8 +34,9 @@ export default function PartnerSettingsPage() {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
-  useEffect(() => {
-    partnerService.getProfile().then((data) => {
+  const loadProfile = async () => {
+    try {
+      const data = await partnerService.getProfile();
       if (data) {
         const d = data as Record<string, unknown>;
         setOrg({
@@ -44,7 +45,13 @@ export default function PartnerSettingsPage() {
           phone: (d.phone as string) ?? "",
         });
       }
-    }).catch(() => {});
+    } catch {
+      // keep current state
+    }
+  };
+
+  useEffect(() => {
+    loadProfile();
   }, []);
 
   const handleLeave = async () => {
@@ -68,6 +75,7 @@ export default function PartnerSettingsPage() {
         email: org.email,
         phone: org.phone,
       });
+      await loadProfile();
       toast({ title: "Saved", description: "Organization profile updated." });
     } catch {
       toast({ title: "Error", description: "Failed to save changes.", variant: "destructive" });

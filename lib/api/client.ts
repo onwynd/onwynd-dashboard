@@ -1,7 +1,9 @@
-import axios, { AxiosError, AxiosHeaders, InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { handleAxiosError } from "@/lib/error-handler";
 import { useTherapistStore } from "@/store/therapist-store";
-import { clearServerSession, syncServerSession } from "@/lib/auth/session-client";
+import { clearServerSession } from "@/lib/auth/session-client";
+import Cookies from "js-cookie";
+import { parseAuthSessionState } from "@/lib/auth/session";
 import { parseApiResponse } from "./utils";
 
 const client = axios.create({
@@ -14,21 +16,62 @@ const client = axios.create({
   },
 });
 
-let isRefreshing = false;
-const failedQueue: Array<{ resolve: () => void; reject: (reason?: unknown) => void }> = [];
+const sessionProbeClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+  withCredentials: true,
+  timeout: 10_000,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+});
 
-function enqueue(): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    failedQueue.push({ resolve, reject });
-  });
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+  _auth401Count?: number;
+  suppressErrorToast?: boolean;
 }
 
+function isNonRecoverableAuthEndpoint(url: string): boolean {
+  return [
+    "/api/v1/auth/login",
+    "/api/v1/auth/register",
+    "/api/v1/auth/logout",
+    "/api/v1/auth/forgot-password",
+    "/api/v1/auth/reset-password",
+  ].some((authPath) => url.includes(authPath));
+}
+
+function getSafeFrom(): string {
+  if (typeof window === "undefined") {
+    return "/";
+  }
+  return `${window.location.pathname}${window.location.search}`;
+}
+
+async function canRecoverSession(): Promise<boolean> {
+  const authState = parseAuthSessionState(Cookies.get("auth_state"));
+  if (!authState?.primaryRole) {
+    return false;
+  }
+
+  try {
+    await sessionProbeClient.get("/api/v1/auth/me");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// TODO: [AUTH REFACTOR] The Authorization header is no longer needed.
+// The browser now sends the secure, HTTP-only cookie automatically with each request
+// thanks to `withCredentials: true`.
 client.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-    if (token) {
-      config.headers.set("Authorization", `Bearer ${token}`);
-    }
+    // const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    // if (token) {
+    //   config.headers.set("Authorization", `Bearer ${token}`);
+    // }
     return config;
   },
   (error) => Promise.reject(error)
@@ -37,65 +80,32 @@ client.interceptors.request.use(
 client.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; suppressErrorToast?: boolean };
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
 
+    // TODO: [AUTH REFACTOR] The token refresh logic has been removed.
+    // It was based on localStorage tokens, which are now deprecated.
+    // The backend needs to handle token expiration with HTTP-only cookies, potentially
+    // by returning a 401 which will trigger a redirect to login.
     if (error.response?.status === 401 && typeof window !== "undefined") {
-      if (originalRequest && !originalRequest._retry) {
-        originalRequest._retry = true;
+      const requestUrl = originalRequest?.url ?? "";
+      const nonRecoverableAuthRequest = isNonRecoverableAuthEndpoint(requestUrl);
+      const attemptCount = (originalRequest?._auth401Count ?? 0) + 1;
 
-        if (isRefreshing) {
-          return enqueue().then(() => client(originalRequest));
-        }
-
-        isRefreshing = true;
-
-        try {
-          const currentToken = localStorage.getItem("auth_token");
-          const refreshResponse = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/refresh`,
-            {},
-            {
-              headers: currentToken ? { Authorization: `Bearer ${currentToken}` } : undefined,
-              withCredentials: true,
-            }
-          );
-
-          const responseData = parseApiResponse(refreshResponse);
-          const data = responseData as { token?: string; access_token?: string };
-          const newToken = data?.token || data?.access_token;
-
-          if (newToken) {
-            localStorage.setItem("auth_token", newToken);
-            await syncServerSession(newToken);
-
-            if (originalRequest.headers instanceof AxiosHeaders) {
-              originalRequest.headers.set("Authorization", `Bearer ${newToken}`);
-            } else {
-              const existing = originalRequest.headers as Record<string, string> | undefined;
-              originalRequest.headers = new AxiosHeaders({ ...(existing || {}), Authorization: `Bearer ${newToken}` });
-            }
-
-            isRefreshing = false;
-            const queued = failedQueue.splice(0, failedQueue.length);
-            queued.forEach((item) => item.resolve());
-            return client(originalRequest);
-          }
-        } catch (refreshError) {
-          isRefreshing = false;
-          const queued = failedQueue.splice(0, failedQueue.length);
-          queued.forEach((item) => item.reject(refreshError));
-          await clearServerSession();
-          localStorage.removeItem("auth_token");
-          const from = encodeURIComponent(window.location.pathname + window.location.search);
-          window.location.href = `/login?from=${from}`;
-          return Promise.reject(refreshError);
-        }
-      } else {
-        await clearServerSession();
-        localStorage.removeItem("auth_token");
-        const from = encodeURIComponent(window.location.pathname + window.location.search);
-        window.location.href = `/login?from=${from}`;
+      if (originalRequest) {
+        originalRequest._auth401Count = attemptCount;
       }
+
+      if (!nonRecoverableAuthRequest && originalRequest && attemptCount < 2 && !originalRequest._retry) {
+        originalRequest._retry = true;
+        const recovered = await canRecoverSession();
+        if (recovered) {
+          return client(originalRequest);
+        }
+      }
+
+      await clearServerSession();
+      const from = encodeURIComponent(getSafeFrom());
+      window.location.href = `/login?from=${from}`;
     }
 
     if (error.response?.status !== 401 && !originalRequest?.suppressErrorToast) {
@@ -113,7 +123,9 @@ client.interceptors.response.use(
             true,
             'Consent required: Patient has not granted progress access. Ask them to enable "Share Progress with Therapist" in Settings.'
           );
-          originalRequest.suppressErrorToast = true;
+          if (originalRequest) {
+            originalRequest.suppressErrorToast = true;
+          }
         }
       }
 

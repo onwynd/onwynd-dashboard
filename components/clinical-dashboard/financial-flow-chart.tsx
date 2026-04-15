@@ -119,7 +119,7 @@ export function FinancialFlowChart() {
 
   useEffect(() => {
     fetchFinancialFlow(period);
-  }, [period]); // fetchFinancialFlow is a stable Zustand action, no need to include it
+  }, [period, fetchFinancialFlow]);
 
   const isDark = theme === "dark";
   const axisColor = isDark ? "#71717a" : "#a1a1aa";

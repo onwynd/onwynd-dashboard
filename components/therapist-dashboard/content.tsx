@@ -1,172 +1,78 @@
+
+// filepath: components/therapist-dashboard/content.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { AlertBanner } from "./alert-banner";
+import { useAuth } from "@/hooks/use-auth";
+import { useTherapistStore } from "@/store/therapist-store";
+import { cn } from "@/lib/utils";
+import { OnboardingWizard } from "./onboarding-wizard";
+import { TermsDialog } from "./terms-dialog";
+import { VerificationStatusBanner } from "./verification-status-banner";
 import { StatsCards } from "./stats-cards";
 import { FinancialFlowChart } from "./financial-flow-chart";
+import { EarningsBreakdown } from "./earnings-breakdown";
 import { PatientsTable } from "./patients-table";
-import { useTherapistStore } from "@/store/therapist-store";
-import { therapistService } from "@/lib/api/therapist";
-import { cn } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { ShieldAlert, Clock, ShieldCheck } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-
-type VerificationStatus = "pending" | "approved" | "rejected" | null;
+import { Skeleton } from "@/components/ui/skeleton";
+import { safeCall } from "@/lib/utils/safe-api";
 
 export function DashboardContent() {
   const router = useRouter();
-  const showAlertBanner = useTherapistStore((state) => state.showAlertBanner);
-  const showStatsCards = useTherapistStore((state) => state.showStatsCards);
-  const showChart = useTherapistStore((state) => state.showChart);
-  const showTable = useTherapistStore((state) => state.showTable);
-  const layoutDensity = useTherapistStore((state) => state.layoutDensity);
-  const fetchStats = useTherapistStore((state) => state.fetchStats);
-  const fetchFinancialFlow = useTherapistStore((state) => state.fetchFinancialFlow);
-
-  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(null);
-  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
-  const [termsAckOpen, setTermsAckOpen] = useState(false);
-  const [accepting, setAccepting] = useState(false);
-  const [hasRead, setHasRead] = useState(false);
-
-  const dismissTermsForNow = () => {
-    localStorage.setItem("terms_remind_after", String(Date.now() + 24 * 60 * 60 * 1000));
-    setTermsAckOpen(false);
-  };
-
-  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
-  const [onboardingComplete, setOnboardingComplete] = useState(false);
-  const [dismissedUntil, setDismissedUntil] = useState<number | null>(null);
-  const [ready, setReady] = useState(false);
-  const [currentTime, setCurrentTime] = useState<number | null>(null);
-
-  const steps = useMemo(
-    () => [
-      {
-        id: "profile",
-        title: "Complete your profile",
-        description: "Add your specialty, bio, and contact details so patients can find you.",
-        actionLabel: "Go to Settings",
-        href: "/therapist/settings",
-      },
-      {
-        id: "availability",
-        title: "Set your availability",
-        description: "Open time slots so patients can book sessions.",
-        actionLabel: "Open Calendar",
-        href: "/therapist/appointments",
-      },
-      {
-        id: "patients",
-        title: "Review your patient list",
-        description: "See who you will be supporting and prepare for upcoming sessions.",
-        actionLabel: "View Patients",
-        href: "/therapist/patients",
-      },
-      {
-        id: "sessions",
-        title: "Prepare for your first session",
-        description: "Review session workflows and notes to be ready from day one.",
-        actionLabel: "View Sessions",
-        href: "/therapist/sessions",
-      },
-    ],
-    []
-  );
+  const { isAuthenticated, hasRole } = useAuth();
+  const {
+    profile,
+    stats,
+    financialFlow,
+    loadingProfile,
+    loadingStats,
+    loadingFinancialFlow,
+    layoutDensity,
+    fetchProfile,
+    fetchDashboardData,
+    acceptTerms,
+    completeOnboardingStep,
+  } = useTherapistStore();
+  
+  const [showTerms, setShowTerms] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    let cancelled = false;
-    const init = () => {
-      if (cancelled) return;
-      const completedRaw = localStorage.getItem("therapist_onboarding_steps");
-      const completed = completedRaw ? (JSON.parse(completedRaw) as unknown) : [];
-      const completedArray = Array.isArray(completed) ? completed.map((x) => String(x)) : [];
-      const completedFlag = localStorage.getItem("therapist_onboarding_completed") === "true";
-      const dismissedRaw = localStorage.getItem("therapist_onboarding_dismissed_until");
-      const dismissed = dismissedRaw ? Number(dismissedRaw) : null;
-      setCompletedSteps(completedArray);
-      setOnboardingComplete(completedFlag);
-      setDismissedUntil(Number.isFinite(dismissed) ? dismissed : null);
-      setCurrentTime(Date.now());
-      setReady(true);
-    };
-    const timer = setTimeout(init, 0);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("therapist_onboarding_steps", JSON.stringify(completedSteps));
-  }, [completedSteps]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("therapist_onboarding_completed", onboardingComplete ? "true" : "false");
-  }, [onboardingComplete]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (dismissedUntil) {
-      localStorage.setItem("therapist_onboarding_dismissed_until", String(dismissedUntil));
-    } else {
-      localStorage.removeItem("therapist_onboarding_dismissed_until");
+    if (isAuthenticated === false) {
+      router.push("/login");
+    } else if (isAuthenticated === true && !hasRole("therapist")) {
+      router.push("/unauthorized");
     }
-  }, [dismissedUntil]);
+  }, [isAuthenticated, hasRole, router]);
 
   useEffect(() => {
-    fetchStats();
-    fetchFinancialFlow("year");
-    // Fetch verification status for the dashboard banner
-    therapistService.getProfile().then((p) => {
-      const profile = p as any;
-      const v = profile?.verification;
-      if (v) {
-        setVerificationStatus(v.status ?? null);
-        setRejectionReason(v.rejection_reason ?? null);
-      }
-      if (!profile?.terms_accepted_at) {
-        const remindAfter = localStorage.getItem("terms_remind_after");
-        const snoozed = remindAfter && Date.now() < Number(remindAfter);
-        if (!snoozed) setTermsAckOpen(true);
-      }
-    }).catch(() => null);
-  }, [fetchStats, fetchFinancialFlow]);
+    if (isAuthenticated && hasRole("therapist")) {
+      safeCall(fetchProfile, "Failed to load profile.");
+      safeCall(fetchDashboardData, "Failed to load dashboard data.");
+    }
+  }, [isAuthenticated, hasRole, fetchProfile, fetchDashboardData]);
 
-  const activeOnboarding =
-    ready &&
-    !onboardingComplete &&
-    (!dismissedUntil || (currentTime ?? 0) > dismissedUntil);
-  const completedCount = completedSteps.length;
-  const totalSteps = steps.length;
-  const allDone = completedCount >= totalSteps;
-
-  const toggleStep = (id: string, value: boolean) => {
-    setCompletedSteps((prev) => {
-      if (value) {
-        if (prev.includes(id)) return prev;
-        return [...prev, id];
+  useEffect(() => {
+      if (profile && !profile.terms_accepted_at) {
+          setShowTerms(true);
       }
-      return prev.filter((s) => s !== id);
-    });
-  };
+  }, [profile]);
+
+  if (!isAuthenticated || !hasRole("therapist") || loadingProfile) {
+    return (
+        <div className="p-8 space-y-6">
+            <Skeleton className="h-12 w-1/3" />
+            <div className="grid gap-4 md:grid-cols-4">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+            </div>
+            <Skeleton className="h-80 w-full" />
+        </div>
+    );
+  }
+
+  const isOnboardingComplete = profile?.onboarding_steps_completed?.length === 4;
 
   return (
     <main
@@ -177,168 +83,49 @@ export function DashboardContent() {
         layoutDensity === "comfortable" && "p-6 sm:p-8 space-y-8 sm:space-y-10"
       )}
     >
-      <Dialog open={termsAckOpen} onOpenChange={setTermsAckOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Therapist Terms Acknowledgment</DialogTitle>
-            <DialogDescription>
-              Please review and acknowledge the Therapist Pricing, Commission & Earnings terms. You can read the full document and return to confirm.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <a
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary underline"
-              href={(process.env.NEXT_PUBLIC_WEB_URL || "https://www.onwynd.com") + "/therapist-terms"}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open Terms in a new tab
-            </a>
-            <div className="flex items-center gap-2 mt-2">
-              <Checkbox id="hasRead" checked={hasRead} onCheckedChange={(val) => setHasRead(Boolean(val))} />
-              <label htmlFor="hasRead" className="text-sm text-muted-foreground">
-                I have read and agree to the Therapist Terms
-              </label>
-            </div>
-          </div>
-          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-            <Button variant="ghost" onClick={dismissTermsForNow}>
-              Remind me later
-            </Button>
-            <Button
-              disabled={!hasRead || accepting}
-              onClick={async () => {
-                setAccepting(true);
-                try {
-                  await therapistService.acceptTerms();
-                  localStorage.removeItem("terms_remind_after");
-                  setTermsAckOpen(false);
-                } catch {
-                  // ignore
-                } finally {
-                  setAccepting(false);
-                }
-              }}
-            >
-              {accepting ? "Saving..." : "Acknowledge"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      {/* Verification Status Banner */}
-      {verificationStatus === "rejected" && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 p-4">
-          <ShieldAlert className="size-5 text-red-600 shrink-0 mt-0.5" />
-          <div className="flex-1 space-y-1">
-            <p className="font-semibold text-red-900 dark:text-red-200 text-sm">Your documents have been rejected</p>
-            {rejectionReason && (
-              <p className="text-sm text-red-700 dark:text-red-300">{rejectionReason}</p>
-            )}
-          </div>
-          <Button asChild size="sm" variant="destructive" className="shrink-0">
-            <Link href="/therapist/profile">Re-upload Documents</Link>
-          </Button>
-        </div>
-      )}
-      {verificationStatus === "pending" && (
-        <div className="flex items-center gap-3 rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 p-4">
-          <Clock className="size-5 text-yellow-600 animate-pulse shrink-0" />
-          <div className="flex-1">
-            <p className="font-semibold text-yellow-900 dark:text-yellow-200 text-sm">Verification under review</p>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">Your documents are being reviewed. This usually takes 1–3 business days.</p>
-          </div>
-          <Button asChild size="sm" variant="outline" className="shrink-0 border-yellow-400 text-yellow-800">
-            <Link href="/therapist/profile">View Status</Link>
-          </Button>
-        </div>
-      )}
-      {verificationStatus === "approved" && (
-        <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 p-4">
-          <ShieldCheck className="size-5 text-green-600 shrink-0" />
-          <p className="text-sm font-semibold text-green-900 dark:text-green-200">Your profile is verified ✓</p>
-        </div>
+      <TermsDialog 
+        open={showTerms} 
+        onOpenChange={setShowTerms}
+        onAccept={acceptTerms}
+      />
+      
+      {profile?.verification_status && <VerificationStatusBanner status={profile.verification_status} />}
+
+      {!isOnboardingComplete && (
+        <OnboardingWizard 
+            completedSteps={profile?.onboarding_steps_completed ?? []}
+            onStepComplete={completeOnboardingStep}
+        />
       )}
 
-      {activeOnboarding && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <CardTitle>Welcome to your therapist dashboard</CardTitle>
-                <CardDescription>
-                  Complete these steps to get ready for your first clients.
-                </CardDescription>
-              </div>
-              <Badge variant={allDone ? "default" : "secondary"}>
-                {completedCount}/{totalSteps} complete
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {steps.map((step, index) => {
-              const done = completedSteps.includes(step.id);
-              return (
-                <div key={step.id} className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      checked={done}
-                      onCheckedChange={(v) => toggleStep(step.id, Boolean(v))}
-                      aria-label={`Mark ${step.title} complete`}
-                    />
-                    <div className="flex-1 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold">
-                          {index + 1}. {step.title}
-                        </span>
-                        {done && <Badge variant="outline">Done</Badge>}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{step.description}</p>
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        <Button size="sm" onClick={() => router.push(step.href)}>
-                          {step.actionLabel}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => toggleStep(step.id, !done)}
-                        >
-                          {done ? "Mark Incomplete" : "Mark Done"}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  {index < steps.length - 1 && <Separator />}
-                </div>
-              );
-            })}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  const now = Date.now();
-                  setCurrentTime(now);
-                  setDismissedUntil(now + 24 * 60 * 60 * 1000);
-                }}
-              >
-                Skip for now
-              </Button>
-              <Button
-                disabled={!allDone}
-                onClick={() => {
-                  if (!allDone) return;
-                  setOnboardingComplete(true);
-                }}
-              >
-                Finish onboarding
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      {showAlertBanner && <AlertBanner />}
-      {showStatsCards && <StatsCards />}
-      {showChart && <FinancialFlowChart />}
-      {showTable && <PatientsTable />}
+      {loadingStats ? <StatsSkeleton /> : <StatsCards stats={stats} />}
+      
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2">
+            {loadingFinancialFlow ? <ChartSkeleton /> : <FinancialFlowChart data={financialFlow} />}
+          </div>
+          <div className="xl:col-span-1">
+            <EarningsBreakdown />
+          </div>
+      </div>
+      
+      <PatientsTable />
+
     </main>
   );
+}
+
+function StatsSkeleton() {
+    return (
+        <div className="grid gap-4 md:grid-cols-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+        </div>
+    );
+}
+
+function ChartSkeleton() {
+    return <Skeleton className="h-[400px] w-full" />;
 }

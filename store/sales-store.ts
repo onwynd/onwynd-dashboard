@@ -132,8 +132,8 @@ export const useSalesStore = create<SalesState>((set) => ({
     try {
       const data = await salesService.getStats();
       set({ stats: data as StatCard[] || undefined });
-    } catch (error) {
-      console.error("Failed to fetch sales stats:", error);
+    } catch {
+      // silent
     }
   },
 
@@ -141,8 +141,8 @@ export const useSalesStore = create<SalesState>((set) => ({
     try {
       const data = await salesService.getRevenueFlow(period);
       set({ revenueFlow: data as RevenueFlow[] || undefined });
-    } catch (error) {
-      console.error("Failed to fetch revenue flow:", error);
+    } catch {
+      // silent
     }
   },
 
@@ -150,8 +150,8 @@ export const useSalesStore = create<SalesState>((set) => ({
     try {
       const data = await salesService.getLeadSources(period);
       set({ leadSources: data as LeadSource[] || undefined });
-    } catch (error) {
-      console.error("Failed to fetch lead sources:", error);
+    } catch {
+      // silent
     }
   },
 
@@ -159,8 +159,8 @@ export const useSalesStore = create<SalesState>((set) => ({
     try {
       const data = await salesService.getDeals(params);
       set({ deals: data as Deal[] || undefined });
-    } catch (error) {
-      console.error("Failed to fetch deals:", error);
+    } catch {
+      // silent
     }
   },
 
@@ -168,8 +168,8 @@ export const useSalesStore = create<SalesState>((set) => ({
     try {
       const data = await salesService.getLeads(params);
       set({ leads: data });
-    } catch (error) {
-      console.error("Failed to fetch leads:", error);
+    } catch {
+      // silent
     }
   },
 
@@ -177,8 +177,8 @@ export const useSalesStore = create<SalesState>((set) => ({
     try {
       const data = await salesService.getTasks(params);
       set({ tasks: data });
-    } catch (error) {
-      console.error("Failed to fetch tasks:", error);
+    } catch {
+      // silent
     }
   },
 }));

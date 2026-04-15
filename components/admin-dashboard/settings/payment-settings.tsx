@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 export function PaymentSettings() {
@@ -14,8 +14,12 @@ export function PaymentSettings() {
     (settings?.env as Record<string, string>) || {}
   );
 
-  const handleSave = () => {
-    updateSettings("env", formData);
+  useEffect(() => {
+    setFormData((settings?.env as Record<string, string>) || {});
+  }, [settings]);
+
+  const handleSave = async () => {
+    await updateSettings("env", formData);
   };
 
   if (!settings) return null;

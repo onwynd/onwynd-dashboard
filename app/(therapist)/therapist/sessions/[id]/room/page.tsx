@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { therapyService } from "@/lib/api/therapy";
+import { therapistService } from "@/lib/api/therapist";
 import { LivePreview } from "@/components/session/live-preview";
 import { Whiteboard } from "@/components/session/whiteboard";
 import { LiveKitRoom } from "@/components/session/livekit-room";
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
 export default function SessionRoomPage() {
   const params = useParams();
   const sessionId = params?.id as string;
+  const [sessionUuid, setSessionUuid] = useState<string | null>(null);
 
   const [consent, setConsent] = useState(false);
   const [tokenInfo, setTokenInfo] = useState<{ token: string; host: string; room: string } | null>(null);
@@ -52,11 +54,27 @@ export default function SessionRoomPage() {
     setError(null);
     setIssuingToken(true);
     try {
-      const res = await therapyService.issueLivekitToken(sessionId, "moderator");
-      const data = res.data || res;
-      setTokenInfo({ token: data.token, host: data.host, room: data.room });
+      let effectiveUuid = sessionUuid;
+      if (!effectiveUuid) {
+        const session = await therapistService.getSession(sessionId) as any;
+        effectiveUuid = session?.uuid ?? null;
+        if (effectiveUuid) {
+          setSessionUuid(effectiveUuid);
+        }
+      }
+
+      if (!effectiveUuid) {
+        throw new Error("Missing session UUID");
+      }
+
+      const data = await therapyService.joinSessionVideo(effectiveUuid) as any;
+      setTokenInfo({
+        token: data.token,
+        host: data.url ?? data.host,
+        room: data.room_name ?? data.room,
+      });
     } catch {
-      setError("Failed to obtain session token. Please try again.");
+      setError("Failed to obtain session token. Ensure session is confirmed and access is authorized.");
     } finally {
       setIssuingToken(false);
     }

@@ -76,12 +76,20 @@ const RU: Permission[]  = ['read', 'update'];
 const R: Permission[]   = ['read'];
 
 type RolePermissions = Partial<Record<Resource, Permission[]>>;
+const ALL_RESOURCES: Resource[] = [
+  "users", "roles", "therapists", "sessions", "finance", "invoices", "payouts", "salaries",
+  "hr", "payroll", "leave", "recruitment", "sales", "deals", "leads", "contacts",
+  "marketing", "campaigns", "subscribers", "support", "tickets", "knowledge_base", "tech",
+  "deployments", "system_health", "product", "roadmap", "features", "compliance", "audit_log",
+  "legal", "organizations", "okr", "kpi", "reports", "notifications", "feature_flags",
+  "security_keys", "content", "ambassador", "partner", "budget", "campaign_expense", "page_views",
+];
 
 export const ROLE_PERMISSIONS: Record<string, RolePermissions> = {
 
   // ── CONTROL TOWER ──────────────────────────────────────────────────────────
   super_admin: Object.fromEntries(
-    (Object.keys({} as Record<Resource, never>)).map((r) => [r, ALL])
+    ALL_RESOURCES.map((resource) => [resource, ALL])
   ) as RolePermissions,
 
   admin: {
@@ -507,6 +515,15 @@ export const ROLE_PERMISSIONS: Record<string, RolePermissions> = {
     notifications: R,
   },
 
+  therapist: {
+    sessions:      RWU,
+    therapists:    RU,
+    users:         R,
+    finance:       R,
+    content:       R,
+    notifications: ALL,
+  },
+
   clinical_advisor: {
     sessions:      RU,
     therapists:    R,
@@ -563,6 +580,20 @@ export const ROLE_PERMISSIONS: Record<string, RolePermissions> = {
     organizations: R,
     users:         R,
     notifications: R,
+  },
+
+  finder: {
+    leads:         R,
+    contacts:      R,
+    organizations: R,
+    deals:         R,
+  },
+
+  builder: {
+    organizations: RWU,
+    contacts:      R,
+    leads:         R,
+    deals:         R,
   },
 
   health_personnel: {

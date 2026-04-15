@@ -150,9 +150,18 @@ function TherapistSignupPageInner() {
         password_confirmation: formData.password_confirmation,
         phone: formData.phone,
         role_slug: "therapist",
-        ...(inviteToken ? { invite_token: inviteToken } : {}),
+        invite_token: inviteToken || undefined,
+        license_number: formData.license_number,
+        license_state: formData.license_state,
+        specializations: formData.specializations,
+        years_experience: formData.years_experience,
+        education_degree: formData.education_degree,
+        education_institution: formData.education_institution,
+        bio: formData.bio,
+        session_rate: formData.session_rate,
+        languages: formData.languages,
       });
-      router.push("/therapist/dashboard");
+      router.push("/therapist/profile");
     } catch (err: unknown) {
       let message = "Signup failed. Please try again.";
       if (typeof err === "object" && err !== null) {

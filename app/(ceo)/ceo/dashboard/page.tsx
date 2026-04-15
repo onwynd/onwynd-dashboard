@@ -14,6 +14,10 @@ import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianG
 import { downloadCSV } from "@/lib/export-utils";
 import client from "@/lib/api/client";
 import { format } from "date-fns";
+import { StickyNotes } from "@/components/shared/sticky-notes";
+import { ExecutiveBrandValuation } from "@/components/shared/executive-brand-valuation";
+import { ExecutiveFinancePanel } from "@/components/shared/executive-finance-panel";
+import { DailyTractionStrip } from "@/components/shared/daily-traction-strip";
 
 function Content() {
   const router = useRouter();
@@ -133,6 +137,10 @@ function Content() {
         </div>
       </div>
 
+      <ExecutiveBrandValuation mode="panel" />
+      <DailyTractionStrip role="ceo" />
+      <ExecutiveFinancePanel role="ceo" />
+
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
@@ -206,7 +214,9 @@ function Content() {
                 <CardTitle className="text-sm text-muted-foreground">{k.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{k.value}</div>
+                <div className={k.id.startsWith("daily_") ? "text-3xl font-black tracking-tight" : "text-2xl font-bold"}>
+                  {k.value}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -512,6 +522,7 @@ function Content() {
           )}
         </CardContent>
       </Card>
+      <StickyNotes roleSlug="ceo" />
     </main>
   );
 }

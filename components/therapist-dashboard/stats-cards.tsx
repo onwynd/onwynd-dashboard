@@ -1,64 +1,38 @@
+
+// filepath: components/therapist-dashboard/stats-cards.tsx
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Users,
-  FileText,
-  Calendar,
-  File,
-  Info,
-} from "lucide-react";
-import { useTherapistStore } from "@/store/therapist-store";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, Calendar, DollarSign, Activity } from "lucide-react";
+import { TherapistStat } from "@/lib/api/therapist";
 
-type IconKey = "users" | "file-text" | "calendar" | "file" | "info";
-type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
-const iconMap: Record<IconKey, IconComponent> = {
-  users: Users,
-  "file-text": FileText,
-  calendar: Calendar,
-  file: File,
-  info: Info,
+interface StatsCardsProps {
+  stats: TherapistStat[];
+}
+
+const iconMap: { [key: string]: React.ElementType } = {
+  patients: Users,
+  sessions: Calendar,
+  earnings: DollarSign,
+  default: Activity,
 };
 
-export function StatsCards() {
-  const stats = useTherapistStore((state) => state.stats);
-
+export function StatsCards({ stats }: StatsCardsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => {
-        const iconKey: IconKey = (stat.iconName && stat.iconName in iconMap
-          ? (stat.iconName as IconKey)
-          : "users");
-        const subtitleKey: IconKey = (stat.iconName && stat.iconName in iconMap
-          ? (stat.iconName as IconKey)
-          : "file");
-        const Icon = iconMap[iconKey] || Users;
-        const SubtitleIcon = iconMap[subtitleKey] || File;
-
+        const Icon = iconMap[stat.title.toLowerCase()] || iconMap.default;
         return (
-          <div
-            key={stat.title}
-            className="relative p-5 rounded-xl border bg-card overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-linear-to-br from-black/5 to-transparent pointer-events-none" />
-            <div className="relative flex items-start justify-between">
-              <div className="flex flex-col gap-6">
-                <p className="text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </p>
-                <p className="text-2xl sm:text-[26px] font-semibold tracking-tight">
-                  {stat.value}
-                </p>
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <SubtitleIcon className="size-4" />
-                  <span className="text-sm font-medium">{stat.subtitle}</span>
-                </div>
-              </div>
-              <Button variant="outline" size="icon" className="size-10">
-                <Icon className="size-5" />
-              </Button>
-            </div>
-          </div>
+          <Card key={stat.title}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <Icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
+            </CardContent>
+          </Card>
         );
       })}
     </div>

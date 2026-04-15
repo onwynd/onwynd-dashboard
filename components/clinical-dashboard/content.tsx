@@ -1,30 +1,23 @@
+
+// filepath: components/clinical-dashboard/content.tsx
 "use client";
 
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+import { useClinicalStore, DistressQueueItem } from "@/store/clinical-store";
+import { cn } from "@/lib/utils";
 import { AlertBanner } from "./alert-banner";
 import { StatsCards } from "./stats-cards";
 import { PatientsTable } from "./patients-table";
-import { useClinicalStore } from "@/store/clinical-store";
-import { cn } from "@/lib/utils";
+import { ClinicalTherapistProfile } from "./therapist-profile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle, Clock, User } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, User, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface DistressQueueItem {
-  id: string;
-  session_id: string;
-  member_id: string;
-  organization_id: number | null;
-  risk_level: 'low' | 'medium' | 'high' | 'severe' | 'critical';
-  flagged_at: string;
-  message_preview: string;
-  resources_shown: boolean;
-  type: 'ai_conversation';
-}
-
-function DistressQueueItem({ item, onResolve }: { item: DistressQueueItem; onResolve: (id: string) => void }) {
+function DistressQueueItemComponent({ item, onResolve }: { item: DistressQueueItem; onResolve: (id: string) => void }) {
   const getRiskBadgeVariant = (level: string) => {
     switch (level) {
       case 'critical':
@@ -162,28 +155,45 @@ function EmptyDistressQueue() {
   );
 }
 
+
 export function DashboardContent() {
-  const showAlertBanner = useClinicalStore((state) => state.showAlertBanner);
-  const showStatsCards = useClinicalStore((state) => state.showStatsCards);
-  const showTable = useClinicalStore((state) => state.showTable);
-  const layoutDensity = useClinicalStore((state) => state.layoutDensity);
-  const fetchStats = useClinicalStore((state) => state.fetchStats);
-  const distressQueue = useClinicalStore((state) => state.distressQueue);
-  const loading = useClinicalStore((state) => state.loading);
-  const resolveDistressItem = useClinicalStore((state) => state.resolveDistressItem);
+  const router = useRouter();
+  const { isAuthenticated, hasRole } = useAuth();
+  const {
+    stats,
+    distressQueue,
+    loadingStats,
+    loadingQueue,
+    layoutDensity,
+    fetchStats,
+    resolveDistressItem,
+  } = useClinicalStore();
+
+  const [activeView, setActiveView] = useState<'clinical' | 'therapist'>('clinical');
+  const isAllowedRole = hasRole("clinical_advisor") || hasRole("admin");
 
   useEffect(() => {
-    fetchStats();
-    const interval = setInterval(fetchStats, 60000);
-    return () => clearInterval(interval);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleResolveDistressItem = async (id: string) => {
-    try {
-      await resolveDistressItem(id, 'resolved', 'Reviewed and resolved by clinical advisor');
-    } catch {
-      // error is set in store; no alert needed
+    if (isAuthenticated === false) {
+      router.push("/login");
+    } else if (isAuthenticated === true && !isAllowedRole) {
+      router.push("/unauthorized");
     }
+  }, [isAuthenticated, isAllowedRole, router]);
+
+  useEffect(() => {
+    if (isAuthenticated && isAllowedRole) {
+      const interval = setInterval(fetchStats, 60000);
+      fetchStats();
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, isAllowedRole, fetchStats]);
+
+  if (!isAuthenticated || !isAllowedRole) {
+    return <div className="w-full h-full flex items-center justify-center"><p>Loading...</p></div>;
+  }
+  
+  const handleResolveDistressItem = async (id: string) => {
+    await resolveDistressItem(id, 'resolved', 'Reviewed and resolved by clinical advisor');
   };
 
   return (
@@ -195,36 +205,73 @@ export function DashboardContent() {
         layoutDensity === "comfortable" && "p-6 sm:p-8 space-y-8 sm:space-y-10"
       )}
     >
-      {showAlertBanner && <AlertBanner />}
-      {showStatsCards && <StatsCards />}
+      <div className="flex items-center gap-2 mb-6">
+        <Button
+          variant={activeView === 'clinical' ? 'default' : 'outline'}
+          onClick={() => setActiveView('clinical')}
+          className="flex items-center gap-2"
+        >
+          <UserCheck className="h-4 w-4" />
+          Clinical Advisor View
+        </Button>
+        {hasRole("therapist") && (
+          <Button
+            variant={activeView === 'therapist' ? 'default' : 'outline'}
+            onClick={() => setActiveView('therapist')}
+            className="flex items-center gap-2"
+          >
+            <User className="h-4 w-4" />
+            My Therapist Profile
+          </Button>
+        )}
+      </div>
 
-      {loading ? (
-        <DistressQueueSkeleton />
-      ) : distressQueue.length === 0 ? (
-        <EmptyDistressQueue />
+      {activeView === 'clinical' ? (
+        <div className="space-y-6">
+          <AlertBanner />
+          {loadingStats ? <StatsSkeleton /> : <StatsCards stats={stats} />}
+
+          {loadingQueue ? (
+            <DistressQueueSkeleton />
+          ) : distressQueue.length === 0 ? (
+            <EmptyDistressQueue />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  Distress Queue ({distressQueue.length} items)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-gray-100">
+                  {distressQueue.map((item) => (
+                    <DistressQueueItemComponent
+                      key={item.id}
+                      item={item}
+                      onResolve={handleResolveDistressItem}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <PatientsTable />
+        </div>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
-              Distress Queue ({distressQueue.length} items)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-gray-100">
-              {distressQueue.map((item) => (
-                <DistressQueueItem
-                  key={item.id}
-                  item={item as DistressQueueItem}
-                  onResolve={handleResolveDistressItem}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <ClinicalTherapistProfile />
       )}
-
-      {showTable && <PatientsTable />}
     </main>
   );
+}
+
+function StatsSkeleton() {
+    return (
+        <div className="grid gap-4 md:grid-cols-3">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+        </div>
+    );
 }

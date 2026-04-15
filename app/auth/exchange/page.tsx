@@ -4,17 +4,9 @@ import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { AppConfig } from "@/lib/config";
+import client from "@/lib/api/client";
 import { getDashboardPathForRole } from "@/lib/auth/role-routing";
 import { syncServerSession } from "@/lib/auth/session-client";
-import client from "@/lib/api/client";
-
-function persistRoleCookies(roleSlug: string, allRoles: string[]) {
-  const secure = window.location.protocol === "https:";
-  const secureFlag = secure ? "; Secure" : "";
-
-  document.cookie = `user_role=${roleSlug}; path=/; max-age=86400; SameSite=Lax${secureFlag}`;
-  document.cookie = `user_all_roles=${encodeURIComponent(JSON.stringify(allRoles))}; path=/; max-age=86400; SameSite=Lax${secureFlag}`;
-}
 
 function ExchangeHandler() {
   const router = useRouter();
@@ -59,27 +51,13 @@ function ExchangeHandler() {
           return;
         }
 
-        localStorage.setItem("auth_token", token);
-
-        const userResponse = await client.get("/api/v1/auth/me");
-        const user = userResponse.data.data ?? userResponse.data;
-        localStorage.setItem("user", JSON.stringify(user));
-
-        const roleSlug =
-          user?.role?.slug ??
-          (typeof user?.role === "string" ? user.role : null) ??
-          "patient";
-
-        const allRoles =
-          Array.isArray(user?.all_roles) && user.all_roles.length > 0
-            ? user.all_roles.filter(
-                (value: unknown): value is string =>
-                  typeof value === "string" && value.length > 0,
-              )
-            : [roleSlug];
-
-        persistRoleCookies(roleSlug, allRoles);
-        await syncServerSession(token);
+        const meResponse = await client.get("/api/v1/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const user = (meResponse.data?.data ?? meResponse.data) ?? null;
+        const sessionState = await syncServerSession(token, user);
 
         const isSafeNext =
           typeof next === "string" &&
@@ -88,7 +66,7 @@ function ExchangeHandler() {
           !next.startsWith("/register");
 
         router.replace(
-          isSafeNext ? next : getDashboardPathForRole(roleSlug),
+          isSafeNext ? next : getDashboardPathForRole(sessionState.primaryRole),
         );
       } catch (error) {
         console.error("Exchange authentication failed", error);

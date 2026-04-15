@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import client from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 interface Notification {
-  id: number;
+  id: number | string;
   title: string;
   message: string;
   type: string;
@@ -20,24 +20,61 @@ interface Notification {
   created_at: string;
 }
 
+function resolveTitle(raw: Record<string, unknown>) {
+  const data = (raw.data as Record<string, unknown> | undefined) ?? {};
+  return (raw.title as string) || (raw.subject as string) || (data.title as string) || "Notification";
+}
+
+function resolveMessage(raw: Record<string, unknown>) {
+  const data = (raw.data as Record<string, unknown> | undefined) ?? {};
+  const html = (raw.html as string) || "";
+  const strippedHtml = html ? html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() : "";
+  return (raw.message as string) || (raw.body as string) || strippedHtml || (data.message as string) || "";
+}
+
+function mapNotifications(raw: unknown): Notification[] {
+  const rows = Array.isArray(raw)
+    ? raw
+    : (raw && typeof raw === "object" && Array.isArray((raw as Record<string, unknown>).data)
+        ? (raw as Record<string, unknown>).data
+        : []);
+
+  return rows
+    .filter((row): row is Record<string, unknown> => !!row && typeof row === "object")
+    .map((row, index) => ({
+      id: (row.id as number | string) ?? `n-${index}`,
+      title: resolveTitle(row),
+      message: resolveMessage(row),
+      type: (row.type as string) ?? "system",
+      read_at: (row.read_at as string | null) ?? null,
+      created_at: (row.created_at as string) ?? new Date().toISOString(),
+    }));
+}
+
 export default function ClinicalNotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await client.get("/api/v1/notifications");
       const data = res.data?.data ?? res.data;
-      setNotifications(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []);
+      setNotifications(mapNotifications(data));
     } catch {
+      setLoadError("Could not load notifications.");
+      setNotifications([]);
       toast({ title: "Error", description: "Failed to load notifications.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const markAllRead = async () => {
     try {
@@ -45,7 +82,13 @@ export default function ClinicalNotificationsPage() {
       setNotifications(prev => prev.map(n => ({ ...n, read_at: new Date().toISOString() })));
       toast({ title: "All marked as read" });
     } catch {
-      toast({ title: "Error", description: "Could not mark as read.", variant: "destructive" });
+      try {
+        await client.post("/api/v1/notifications/mark-all-read");
+        setNotifications(prev => prev.map(n => ({ ...n, read_at: new Date().toISOString() })));
+        toast({ title: "All marked as read" });
+      } catch {
+        toast({ title: "Error", description: "Could not mark as read.", variant: "destructive" });
+      }
     }
   };
 
@@ -84,6 +127,12 @@ export default function ClinicalNotificationsPage() {
         <div className="space-y-2">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
         </div>
+      ) : loadError ? (
+        <Card>
+          <CardContent className="py-6">
+            <p className="text-sm text-red-600">{loadError}</p>
+          </CardContent>
+        </Card>
       ) : notifications.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">

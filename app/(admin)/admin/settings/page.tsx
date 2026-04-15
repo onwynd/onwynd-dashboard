@@ -141,6 +141,8 @@ function SettingsContent() {
 
   // Gateway settings state — flat key/value map: {name}_enabled, {name}_mode, {name}_{mode}_key…
   type GatewaySettings = Record<string, boolean | string>;
+  type GatewayId = 'paystack' | 'flutterwave' | 'klump' | 'stripe' | 'dodopayments';
+  type LiveValidationState = 'idle' | 'valid' | 'invalid';
   const buildDefaultGateways = (): GatewaySettings => {
     const out: GatewaySettings = {};
     const defaultsOn = ['paystack', 'dodopayments'];
@@ -157,6 +159,64 @@ function SettingsContent() {
   const [gatewaySettings, setGatewaySettings] = useState<GatewaySettings>(buildDefaultGateways());
   const [gatewayLoading, setGatewayLoading] = useState(false);
   const [gatewaySaving, setGatewaySaving] = useState(false);
+  const [gatewayLiveValidation, setGatewayLiveValidation] = useState<Record<GatewayId, LiveValidationState>>({
+    paystack: 'idle',
+    flutterwave: 'idle',
+    klump: 'idle',
+    stripe: 'idle',
+    dodopayments: 'idle',
+  });
+  const [gatewayLiveValidationMessage, setGatewayLiveValidationMessage] = useState<Record<GatewayId, string>>({
+    paystack: '',
+    flutterwave: '',
+    klump: '',
+    stripe: '',
+    dodopayments: '',
+  });
+
+  const getGatewayLiveValidationError = useCallback((id: GatewayId, state: GatewaySettings): string | null => {
+    const livePublic = String(state[`${id}_live_public_key`] ?? '').trim();
+    const liveSecret = String(state[`${id}_live_secret_key`] ?? '').trim();
+
+    if (!livePublic || !liveSecret) {
+      return 'Live public and secret keys are required.';
+    }
+
+    if (id === 'paystack') {
+      if (!livePublic.startsWith('pk_live_') || !liveSecret.startsWith('sk_live_')) {
+        return 'Paystack live keys must start with pk_live_ and sk_live_.';
+      }
+    }
+
+    if (id === 'stripe') {
+      if (!livePublic.startsWith('pk_live_') || !liveSecret.startsWith('sk_live_')) {
+        return 'Stripe live keys must start with pk_live_ and sk_live_.';
+      }
+    }
+
+    if (id === 'flutterwave') {
+      const pubOk = livePublic.toUpperCase().startsWith('FLWPUBK_LIVE');
+      const secOk = liveSecret.toUpperCase().startsWith('FLWSECK_LIVE');
+      if (!pubOk || !secOk) {
+        return 'Flutterwave live keys must start with FLWPUBK_LIVE and FLWSECK_LIVE.';
+      }
+    }
+
+    return null;
+  }, []);
+
+  const validateLiveGateway = useCallback((id: GatewayId, state: GatewaySettings) => {
+    const error = getGatewayLiveValidationError(id, state);
+    if (error) {
+      setGatewayLiveValidation((prev) => ({ ...prev, [id]: 'invalid' }));
+      setGatewayLiveValidationMessage((prev) => ({ ...prev, [id]: error }));
+      return false;
+    }
+
+    setGatewayLiveValidation((prev) => ({ ...prev, [id]: 'valid' }));
+    setGatewayLiveValidationMessage((prev) => ({ ...prev, [id]: 'Live keys validated.' }));
+    return true;
+  }, [getGatewayLiveValidationError]);
 
   // Geo settings state
   const [geoSettings, setGeoSettings] = useState({
@@ -255,6 +315,20 @@ function SettingsContent() {
   const handleSaveGateways = async () => {
     setGatewaySaving(true);
     try {
+      for (const id of ['paystack', 'flutterwave', 'klump', 'stripe', 'dodopayments'] as GatewayId[]) {
+        const enabled = Boolean(gatewaySettings[`${id}_enabled`]);
+        const mode = (gatewaySettings[`${id}_mode`] ?? 'test') as 'test' | 'live';
+        if (enabled && mode === 'live' && !validateLiveGateway(id, gatewaySettings)) {
+          toast({
+            title: "Live validation required",
+            description: `${id} must pass live key validation before saving in LIVE mode.`,
+            variant: "destructive",
+          });
+          setGatewaySaving(false);
+          return;
+        }
+      }
+
       await client.put("/api/v1/admin/settings/gateways", gatewaySettings);
       toast({ title: "Gateway settings saved" });
     } catch {
@@ -1766,8 +1840,11 @@ function SettingsContent() {
             ).map(({ id, label, currency, type, subtitle }) => {
               const enabled = Boolean(gatewaySettings[`${id}_enabled`]);
               const mode    = (gatewaySettings[`${id}_mode`] ?? 'test') as 'test' | 'live';
-              const updateStr = (field: string, value: string) =>
+              const updateStr = (field: string, value: string) => {
                 setGatewaySettings((prev) => ({ ...prev, [`${id}_${field}`]: value }));
+                setGatewayLiveValidation((prev) => ({ ...prev, [id]: 'idle' }));
+                setGatewayLiveValidationMessage((prev) => ({ ...prev, [id]: '' }));
+              };
 
               return (
                 <Card key={id} className={enabled ? '' : 'opacity-60'}>
@@ -1804,9 +1881,17 @@ function SettingsContent() {
                           <Switch
                             checked={mode === 'live'}
                             disabled={!enabled}
-                            onCheckedChange={(checked) =>
-                              setGatewaySettings((prev) => ({ ...prev, [`${id}_mode`]: checked ? 'live' : 'test' }))
-                            }
+                            onCheckedChange={(checked) => {
+                              if (checked && !validateLiveGateway(id, gatewaySettings)) {
+                                toast({
+                                  title: "Cannot switch to LIVE",
+                                  description: gatewayLiveValidationMessage[id] || "Validate live keys first.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              setGatewaySettings((prev) => ({ ...prev, [`${id}_mode`]: checked ? 'live' : 'test' }));
+                            }}
                           />
                           <span className="text-sm text-muted-foreground">Live</span>
                         </div>
@@ -1846,6 +1931,30 @@ function SettingsContent() {
                         <div className="space-y-2">
                           <Label htmlFor={`${id}_live_sk`}>Secret Key</Label>
                           <Input id={`${id}_live_sk`} type="password" placeholder="sk_live_…" value={String(gatewaySettings[`${id}_live_secret_key`] ?? '')} onChange={(e) => updateStr('live_secret_key', e.target.value)} />
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const ok = validateLiveGateway(id, gatewaySettings);
+                              const validationError = getGatewayLiveValidationError(id, gatewaySettings);
+                              toast({
+                                title: ok ? "Live keys validated" : "Live key validation failed",
+                                description: ok ? `${label} is ready for LIVE mode.` : (validationError || "Invalid live keys."),
+                                variant: ok ? "default" : "destructive",
+                              });
+                            }}
+                          >
+                            Validate Live Keys
+                          </Button>
+                          {gatewayLiveValidation[id] === 'valid' && (
+                            <span className="text-xs text-green-700">Validated for LIVE</span>
+                          )}
+                          {gatewayLiveValidation[id] === 'invalid' && (
+                            <span className="text-xs text-red-700">{gatewayLiveValidationMessage[id]}</span>
+                          )}
                         </div>
                       </div>
                     </div>

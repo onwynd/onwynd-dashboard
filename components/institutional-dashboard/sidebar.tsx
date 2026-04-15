@@ -49,6 +49,12 @@ const icons = {
 };
 
 type OrgType = "university" | "corporate" | "faith_ngo" | string | null;
+type SidebarItem = {
+  title: string;
+  href: string;
+  icon: string;
+  comingSoon?: boolean;
+};
 
 export function InstitutionalSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
@@ -107,7 +113,7 @@ export function InstitutionalSidebar({ ...props }: React.ComponentProps<typeof S
 
   const roleSlug = orgType === "university" ? "university_admin" : "institution_admin";
 
-  const baseMenuItems = [
+  const baseMenuItems: SidebarItem[] = [
     { title: "Dashboard",      href: "/institutional/dashboard",    icon: "LayoutDashboard" },
     { title: labels.members,   href: "/institutional/members",      icon: "Users"           },
     { title: labels.atRisk,    href: "/institutional/at-risk",      icon: "Activity"        },
@@ -120,12 +126,12 @@ export function InstitutionalSidebar({ ...props }: React.ComponentProps<typeof S
     { title: "Notifications",   href: "/settings/notifications",      icon: "Bell"            },
   ];
 
-  const universityMenuItems = orgType === "university" ? [
-    { title: "Student Verifications", href: "/institutional/student-verifications", icon: "BadgeCheck" },
-    { title: "Crisis Alerts",         href: "/institutional/crisis-alerts",          icon: "AlertCircle" },
+  const universityMenuItems: SidebarItem[] = orgType === "university" ? [
+    { title: "Student Verifications", href: "/institutional/student-verifications", icon: "BadgeCheck", comingSoon: true },
+    { title: "Crisis Alerts",         href: "/institutional/crisis-alerts",          icon: "AlertCircle", comingSoon: true },
   ] : [];
 
-  const menuItems = [...baseMenuItems, ...universityMenuItems].filter((i) => !isDisabled(i.href));
+  const menuItems: SidebarItem[] = [...baseMenuItems, ...universityMenuItems].filter((i) => !isDisabled(i.href));
 
   const PortalIcon = icons[labels.portalIcon] ?? Building2;
 
@@ -176,27 +182,39 @@ export function InstitutionalSidebar({ ...props }: React.ComponentProps<typeof S
                           : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                       )}
                     >
-                      <Link href={item.href} className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <Icon className="size-4 shrink-0" />
-                          <span>{item.title}</span>
+                      {item.comingSoon ? (
+                        <div className="flex items-center justify-between w-full opacity-60 cursor-not-allowed" title="Coming soon">
+                          <div className="flex items-center gap-2">
+                            <Icon className="size-4 shrink-0" />
+                            <span>{item.title}</span>
+                            <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
+                              Coming soon
+                            </span>
+                          </div>
                         </div>
-                        {item.href === "/institutional/at-risk" && unreviewedCount > 0 && (
-                          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white px-1">
-                            {unreviewedCount > 99 ? "99+" : unreviewedCount}
-                          </span>
-                        )}
-                        {item.href === "/institutional/student-verifications" && pendingVerificationCount > 0 && (
-                          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white px-1">
-                            {pendingVerificationCount > 99 ? "99+" : pendingVerificationCount}
-                          </span>
-                        )}
-                        {item.href === "/institutional/crisis-alerts" && unreviewedCount > 0 && (
-                          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white px-1">
-                            {unreviewedCount > 99 ? "99+" : unreviewedCount}
-                          </span>
-                        )}
-                      </Link>
+                      ) : (
+                        <Link href={item.href} className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <Icon className="size-4 shrink-0" />
+                            <span>{item.title}</span>
+                          </div>
+                          {item.href === "/institutional/at-risk" && unreviewedCount > 0 && (
+                            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white px-1">
+                              {unreviewedCount > 99 ? "99+" : unreviewedCount}
+                            </span>
+                          )}
+                          {item.href === "/institutional/student-verifications" && pendingVerificationCount > 0 && (
+                            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white px-1">
+                              {pendingVerificationCount > 99 ? "99+" : pendingVerificationCount}
+                            </span>
+                          )}
+                          {item.href === "/institutional/crisis-alerts" && unreviewedCount > 0 && (
+                            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white px-1">
+                              {unreviewedCount > 99 ? "99+" : unreviewedCount}
+                            </span>
+                          )}
+                        </Link>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

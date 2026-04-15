@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
+import { PermissionGate } from "@/components/shared/PermissionGate";
 
 interface Lead {
   id: number;
@@ -74,7 +75,9 @@ export function NewInboundLeads() {
                 <p className="font-medium">{lead.company}</p>
                 <p className="text-sm text-muted-foreground">{lead.first_name} {lead.last_name} • {formatDistanceToNow(new Date(lead.created_at))} ago</p>
               </div>
-              <Button size="sm" onClick={() => assignToMe(lead.id)}>Assign to Me</Button>
+              <PermissionGate resource="leads" permission="write">
+                <Button size="sm" onClick={() => assignToMe(lead.id)}>Assign to Me</Button>
+              </PermissionGate>
             </div>
           ))}
         </div>

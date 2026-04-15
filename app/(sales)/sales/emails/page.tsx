@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Mail, Plus, Search, Send, User, Loader2 } from "lucide-react";
 import client from "@/lib/api/client";
 import { toast } from "@/components/ui/use-toast";
+import Cookies from "js-cookie";
 
 export default function SalesEmailsPage() {
   const rawLeads = useSalesStore((state) => state.leads);
@@ -19,12 +20,26 @@ export default function SalesEmailsPage() {
   const [search, setSearch] = useState("");
   const [isComposing, setIsComposing] = useState(false);
   const [toEmail, setToEmail] = useState("");
+  const [fromName, setFromName] = useState("");
+  const [fromEmail, setFromEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     fetchLeads();
+    const userCookie = Cookies.get("user");
+    if (!userCookie) {
+      return;
+    }
+    try {
+      const user = JSON.parse(userCookie) as { first_name?: string; last_name?: string; email?: string };
+      const resolvedName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim();
+      if (resolvedName) setFromName(resolvedName);
+      if (user.email) setFromEmail(user.email);
+    } catch {
+      // keep defaults if cookie is malformed
+    }
   }, [fetchLeads]);
 
   const filtered = rawLeads.filter((l) => {
@@ -37,7 +52,15 @@ export default function SalesEmailsPage() {
     if (!toEmail.trim() || !subject.trim()) return;
     setSending(true);
     try {
-      await client.post("/api/v1/sales/mail/send", { to: toEmail, subject, body });
+      await client.post("/api/v1/sales/mail/send", {
+        to: toEmail,
+        subject,
+        body,
+        from_name: fromName || undefined,
+        from_email: fromEmail || undefined,
+        reply_to: fromEmail || undefined,
+        provider_hint: "zoho_custom_domain_ready",
+      });
       toast({ description: `Email sent to ${toEmail}` });
       setIsComposing(false);
       setToEmail("");
@@ -48,6 +71,14 @@ export default function SalesEmailsPage() {
     } finally {
       setSending(false);
     }
+  };
+
+  const applySmartTemplate = () => {
+    const signatureName = fromName || "Onwynd Sales Team";
+    setSubject("Quick check-in on your onboarding with Onwynd");
+    setBody(
+      `Hi there,\n\nI hope you are doing well. I wanted to follow up on your interest in Onwynd and share any details you need to move forward confidently.\n\nIf you are open to it, I can schedule a short walkthrough to match the right onboarding path for your needs.\n\nWarm regards,\n${signatureName}\nOnwynd`
+    );
   };
 
   return (
@@ -72,6 +103,16 @@ export default function SalesEmailsPage() {
                 <Label htmlFor="to">To</Label>
                 <Input id="to" value={toEmail} onChange={(e) => setToEmail(e.target.value)} placeholder="lead@company.com" />
               </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="from_name">From name</Label>
+                  <Input id="from_name" value={fromName} onChange={(e) => setFromName(e.target.value)} placeholder="Sales Agent Name" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="from_email">From email</Label>
+                  <Input id="from_email" type="email" value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} placeholder="name@onwynd.com" />
+                </div>
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="subject">Subject</Label>
                 <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Following up on..." />
@@ -79,6 +120,12 @@ export default function SalesEmailsPage() {
               <div className="grid gap-2">
                 <Label htmlFor="body">Message</Label>
                 <Textarea id="body" value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write your message..." rows={6} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Button type="button" variant="outline" size="sm" onClick={applySmartTemplate}>
+                  Use Smart Template
+                </Button>
+                <p className="text-xs text-muted-foreground">From identity is included in request payload.</p>
               </div>
             </div>
             <DialogFooter>

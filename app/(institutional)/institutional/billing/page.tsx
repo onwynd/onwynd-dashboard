@@ -10,8 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, Calendar, Package, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
-import client from "@/lib/api/client";
-
 interface BillingRecord {
   id: number | string;
   amount: number;
@@ -51,14 +49,10 @@ export default function InstitutionalBillingPage() {
   const fetchBillingData = async () => {
     setLoading(true);
     try {
-      const [orgRes, invoicesRes] = await Promise.allSettled([
-        institutionalService.getOrganization(),
-        client.get("/api/v1/institutional/billing/invoices").then((r) => r.data?.data ?? r.data),
-      ]);
-
-      if (orgRes.status === "fulfilled" && orgRes.value) {
-        const org = orgRes.value as Record<string, unknown>;
-        const sub = (org.subscription ?? org.active_subscription) as Record<string, unknown> | undefined;
+      const org = await institutionalService.getOrganization();
+      if (org) {
+        const orgRecord = org as Record<string, unknown>;
+        const sub = (orgRecord.subscription ?? orgRecord.active_subscription) as Record<string, unknown> | undefined;
         if (sub) {
           setSubscription({
             plan_name: String(sub.plan_name ?? sub.name ?? "—"),
@@ -69,11 +63,16 @@ export default function InstitutionalBillingPage() {
             currency: String(sub.currency ?? "NGN"),
           });
         }
-      }
 
-      if (invoicesRes.status === "fulfilled") {
-        const list = invoicesRes.value;
-        setInvoices(Array.isArray(list) ? list : []);
+        const orgId = orgRecord.id as string | number;
+        if (orgId) {
+          try {
+            const list = await institutionalService.getBillingInvoices(orgId);
+            setInvoices(Array.isArray(list) ? list : []);
+          } catch {
+            // invoices may not exist yet — silent
+          }
+        }
       }
     } finally {
       setLoading(false);

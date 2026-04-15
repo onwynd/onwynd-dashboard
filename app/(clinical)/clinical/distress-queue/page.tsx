@@ -53,7 +53,7 @@ export default function DistressQueuePage() {
     }
   };
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, []);
 
   const resolve = async (id: string) => {
     try {

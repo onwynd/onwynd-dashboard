@@ -1,265 +1,127 @@
+
+// filepath: store/admin-store.ts
 import { create } from "zustand";
 import { adminService } from "@/lib/api/admin";
 import { toast } from "@/components/ui/use-toast";
 
-interface StatItem {
-  id: string;
+// Define interfaces for the data models
+export interface AdminStat {
   title: string;
   value: string;
-  icon: string;
-  isPositive: boolean;
-  change: string;
-  changeValue: string;
-  details?: string;
-  variant?: string;
+  subtitle: string;
+  iconName?: string;
 }
 
-interface RevenueItem {
+export interface RevenueFlowEntry {
+  month: string;
+  revenue: number;
+}
+
+export interface Deal {
+  id: string;
   name: string;
-  value: number;
-}
-
-interface LeadSourceItem {
-  name: string;
-  value: number;
-}
-
-interface DealItem {
-  id: string | number;
-  dealName: string;
-  client: string;
-  value: number;
   stage: string;
-  owner: string;
-  ownerInitials: string;
-  date: string;
-  expectedClose: string;
-  dealInitial: string;
-  dealColor: string;
+  value: number;
 }
 
-interface TherapistItem {
-  id: string | number;
+export interface ActiveUser {
+  id: string;
   name: string;
-  specialty: string;
-  status: string;
-  date: string;
-  avatar?: string;
-  initials: string;
+  last_seen: string;
 }
 
-interface QuotaAnalyticsItem {
-  date: string;
-  total_users: number;
-  active_users: number;
-  ai_messages_sent: number;
-  activities_logged: number;
-  quota_overages: number;
-  revenue_generated: number;
-}
-
-interface QuotaOverageItem {
-  user_id: string | number;
-  user_name: string;
-  user_email: string;
-  feature: string;
-  usage: number;
-  limit: number;
-  overage: number;
-  last_occurrence: string;
+export interface QuotaOverview {
+    [key: string]: {
+        limit: number;
+        usage: number;
+    };
 }
 
 interface AdminState {
-  stats: StatItem[];
-  revenueFlow: RevenueItem[];
-  leadSources: LeadSourceItem[];
-  deals: DealItem[];
-  pendingTherapists: TherapistItem[];
-  quotaAnalytics: QuotaAnalyticsItem[];
-  quotaOverages: QuotaOverageItem[];
-  isLoading: boolean;
-  
-  // Filters
-  searchQuery: string;
-  stageFilter: string;
-  ownerFilter: string;
-  valueFilter: string;
+  stats: AdminStat[];
+  revenueFlow: RevenueFlowEntry[];
+  deals: Deal[];
+  activeUsers: ActiveUser[];
+  quotaOverview: QuotaOverview | null;
+  loadingStats: boolean;
+  loadingRevenue: boolean;
+  loadingDeals: boolean;
+  loadingActiveUsers: boolean;
+  loadingQuota: boolean;
+  error: string | null;
 
   fetchStats: () => Promise<void>;
   fetchRevenueFlow: (period?: string) => Promise<void>;
-  fetchLeadSources: (period?: string) => Promise<void>;
   fetchDeals: () => Promise<void>;
-  fetchPendingTherapists: () => Promise<void>;
-  approveTherapist: (id: string) => Promise<void>;
-  rejectTherapist: (id: string, reason: string) => Promise<void>;
-  fetchQuotaAnalytics: (period?: string) => Promise<void>;
-  fetchQuotaOverages: (params?: Record<string, unknown>) => Promise<void>;
-  
-  setSearchQuery: (query: string) => void;
-  setStageFilter: (filter: string) => void;
-  setOwnerFilter: (filter: string) => void;
-  setValueFilter: (filter: string) => void;
-  clearFilters: () => void;
+  fetchActiveUsers: () => Promise<void>;
+  fetchQuotaOverview: () => Promise<void>;
 }
 
 export const useAdminStore = create<AdminState>((set) => ({
   stats: [],
   revenueFlow: [],
-  leadSources: [],
   deals: [],
-  pendingTherapists: [],
-  quotaAnalytics: [],
-  quotaOverages: [],
-  isLoading: false,
-  
-  searchQuery: "",
-  stageFilter: "all",
-  ownerFilter: "all",
-  valueFilter: "all",
-
-  setSearchQuery: (query) => set({ searchQuery: query }),
-  setStageFilter: (filter) => set({ stageFilter: filter }),
-  setOwnerFilter: (filter) => set({ ownerFilter: filter }),
-  setValueFilter: (filter) => set({ valueFilter: filter }),
-  clearFilters: () => set({ 
-    searchQuery: "", 
-    stageFilter: "all", 
-    ownerFilter: "all", 
-    valueFilter: "all" 
-  }),
+  activeUsers: [],
+  quotaOverview: null,
+  loadingStats: true,
+  loadingRevenue: true,
+  loadingDeals: true,
+  loadingActiveUsers: true,
+  loadingQuota: true,
+  error: null,
 
   fetchStats: async () => {
-    try {
-      const data = await adminService.getStats();
-      set({ stats: data as StatItem[] | undefined });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard statistics. Please try again.",
-        variant: "destructive"
-      });
+    set({ loadingStats: true });
+    const { data, error } = await adminService.getStats();
+    if (data) {
+      set({ stats: data, loadingStats: false });
+    } else {
+      set({ loadingStats: false, error: error });
+      toast({ title: "Error", description: "Failed to load stats.", variant: "destructive" });
     }
   },
-  fetchRevenueFlow: async (period = '6months') => {
-    try {
-      const data = await adminService.getRevenueFlow(period);
-      set({ revenueFlow: data as RevenueItem[] | undefined });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to load revenue flow data. Please try again.",
-        variant: "destructive"
-      });
+
+  fetchRevenueFlow: async (period = "monthly") => {
+    set({ loadingRevenue: true });
+    const { data, error } = await adminService.getRevenueFlow(period);
+    if (data) {
+      set({ revenueFlow: data, loadingRevenue: false });
+    } else {
+      set({ loadingRevenue: false, error: error });
+      toast({ title: "Error", description: "Failed to load revenue flow.", variant: "destructive" });
     }
   },
-  fetchLeadSources: async (period = '30days') => {
-    try {
-      const data = await adminService.getLeadSources(period);
-      set({ leadSources: data as LeadSourceItem[] | undefined });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to load lead sources data. Please try again.",
-        variant: "destructive"
-      });
-    }
-  },
+
   fetchDeals: async () => {
-    try {
-      const data = await adminService.getRecentDeals();
-      set({ deals: data as DealItem[] | undefined });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to load deals data. Please try again.",
-        variant: "destructive"
-      });
-    }
-  },
-  fetchPendingTherapists: async () => {
-    set({ isLoading: true });
-    try {
-      const data = await adminService.getPendingTherapists();
-      set({ pendingTherapists: data as TherapistItem[] | undefined });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to load pending therapists. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-  approveTherapist: async (id) => {
-    try {
-      await adminService.approveTherapist(id);
-      // Refresh list
-      const data = await adminService.getPendingTherapists();
-      set({ pendingTherapists: data as TherapistItem[] | undefined });
-      toast({
-        title: "Success",
-        description: "Therapist approved successfully.",
-      });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to approve therapist. Please try again.",
-        variant: "destructive"
-      });
-    }
-  },
-  rejectTherapist: async (id, reason) => {
-    try {
-      await adminService.rejectTherapist(id, reason);
-      // Refresh list
-      const data = await adminService.getPendingTherapists();
-      set({ pendingTherapists: data as TherapistItem[] | undefined });
-      toast({
-        title: "Success",
-        description: "Therapist rejected successfully.",
-      });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to reject therapist. Please try again.",
-        variant: "destructive"
-      });
+    set({ loadingDeals: true });
+    const { data, error } = await adminService.getDeals();
+    if (data) {
+      set({ deals: data, loadingDeals: false });
+    } else {
+      set({ loadingDeals: false, error: error });
+      toast({ title: "Error", description: "Failed to load deals.", variant: "destructive" });
     }
   },
 
-  fetchQuotaAnalytics: async (period = '30days') => {
-    try {
-      const data = await adminService.getQuotaOverages({ period });
-      set({ quotaAnalytics: data as QuotaAnalyticsItem[] | undefined });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to load quota analytics. Please try again.",
-        variant: "destructive"
-      });
+  fetchActiveUsers: async () => {
+    set({ loadingActiveUsers: true });
+    const { data, error } = await adminService.getActiveUsers();
+    if (data) {
+      set({ activeUsers: data, loadingActiveUsers: false });
+    } else {
+      set({ loadingActiveUsers: false, error: error });
+      toast({ title: "Error", description: "Failed to load active users.", variant: "destructive" });
     }
   },
 
-  fetchQuotaOverages: async (params = {}) => {
-    try {
-      const data = await adminService.getQuotaOverages(params);
-      set({ quotaOverages: data as QuotaOverageItem[] | undefined });
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to load quota overages. Please try again.",
-        variant: "destructive"
-      });
+  fetchQuotaOverview: async () => {
+    set({ loadingQuota: true });
+    const { data, error } = await adminService.getQuotaOverview();
+    if (data) {
+      set({ quotaOverview: data, loadingQuota: false });
+    } else {
+      set({ loadingQuota: false, error: error });
+      toast({ title: "Error", description: "Failed to load quota overview.", variant: "destructive" });
     }
-  }
+  },
 }));

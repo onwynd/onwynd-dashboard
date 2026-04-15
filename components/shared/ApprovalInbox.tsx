@@ -300,28 +300,47 @@ interface Props {
 
 export function ApprovalInbox({ filterType, showTabs = true }: Props) {
   const { requests, isLoading, fetchRequests, fetchInbox } = useApprovalStore();
+  const [sessionUser, setSessionUser] = useState<{ id: string | number | null; roles: string[] }>({
+    id: null,
+    roles: [],
+  });
   const [tab, setTab]       = useState<"inbox" | "mine">("inbox");
   const [active, setActive] = useState<{ req: ApprovalRequest; action: ActionType } | null>(null);
 
   // Grab current user id from cookie/localStorage
-  const currentUserId = (() => {
-    try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem("user") : null;
-      return raw ? JSON.parse(raw)?.id : null;
-    } catch { return null; }
-  })();
-  const currentRoles: string[] = (() => {
-    try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem("user") : null;
-      const user = raw ? JSON.parse(raw) : null;
-      return user?.roles ?? [user?.role].filter(Boolean);
-    } catch { return []; }
-  })();
+  const currentUserId = sessionUser.id;
+  const currentRoles = sessionUser.roles;
 
   useEffect(() => {
     fetchRequests(filterType ? { type: filterType as never } : {});
     fetchInbox();
   }, [filterType]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const response = await fetch("/api/auth/session/me", {
+          method: "GET",
+          credentials: "include",
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) return;
+        const payload = (await response.json()) as {
+          user?: { id?: string | number | null; all_roles?: string[]; role?: { slug?: string } };
+        };
+        const user = payload.user;
+        const roles = Array.isArray(user?.all_roles)
+          ? user.all_roles
+          : user?.role?.slug
+            ? [user.role.slug]
+            : [];
+        setSessionUser({ id: user?.id ?? null, roles });
+      } catch {
+        setSessionUser({ id: null, roles: [] });
+      }
+    };
+    void loadSession();
+  }, []);
 
   const onAction = (req: ApprovalRequest, action: ActionType) => setActive({ req, action });
   const closeModal = () => setActive(null);

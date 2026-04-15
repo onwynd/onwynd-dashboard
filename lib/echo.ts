@@ -2,7 +2,7 @@
  * Laravel Echo singleton (Reverb / Pusher-compatible).
  *
  * Lazily initialised so it only runs in the browser, never during SSR.
- * Auth token is read from localStorage at connect time.
+ * Authentication uses same-origin session cookies.
  */
 
 import Echo from 'laravel-echo';
@@ -23,8 +23,6 @@ export function getEcho(): Echo<any> | null {
   const Pusher = require('pusher-js');
   (window as unknown as Record<string, unknown>).Pusher = Pusher;
 
-  const token = localStorage.getItem('auth_token') ?? '';
-
   echoInstance = new LaravelEcho({
     broadcaster: 'reverb',
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY ?? '',
@@ -35,8 +33,8 @@ export function getEcho(): Echo<any> | null {
     enabledTransports: ['ws', 'wss'],
     authEndpoint: `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/broadcasting/auth`,
     auth: {
+      withCredentials: true,
       headers: {
-        Authorization: `Bearer ${token}`,
         Accept: 'application/json',
       },
     },

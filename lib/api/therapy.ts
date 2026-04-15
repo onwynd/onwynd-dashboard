@@ -10,4 +10,9 @@ export const therapyService = {
     const response = await client.post('/api/v1/therapy/video/consent', { session_id: sessionId, consent });
     return response.data.data ?? response.data;
   },
+
+  async joinSessionVideo(sessionUuid: string) {
+    const response = await client.post(`/api/v1/sessions/${sessionUuid}/video/join`);
+    return response.data.data ?? response.data;
+  },
 };

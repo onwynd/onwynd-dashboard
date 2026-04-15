@@ -59,7 +59,7 @@ export default function SessionReviewPage() {
     }
   };
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, []);
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
@@ -124,7 +124,7 @@ export default function SessionReviewPage() {
                 <Badge className={cn("shrink-0 text-xs capitalize", STATUS_COLOR[s.status] ?? "bg-gray-100 text-gray-600")}>
                   {s.status}
                 </Badge>
-                <Link href={`/admin/sessions/${s.uuid}/review`}>
+                <Link href={`/clinical/session-audits?session=${encodeURIComponent(s.uuid)}`}>
                   <Button size="sm" variant="outline">Review</Button>
                 </Link>
               </div>

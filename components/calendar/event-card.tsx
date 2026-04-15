@@ -15,6 +15,7 @@ export function EventCard({ event, style, onClick }: EventCardProps) {
   const duration = getEventDuration(event.startTime, event.endTime);
   const isVeryShortEvent = duration < 30;
   const isMediumEvent = duration >= 25 && duration < 60;
+  const isPendingAcceptance = event.status === "pending_confirmation";
   const timeStr = `${event.startTime} - ${event.endTime}${
     event.timezone ? ` (${event.timezone})` : ""
   }`;
@@ -52,6 +53,9 @@ export function EventCard({ event, style, onClick }: EventCardProps) {
               {event.title}
             </h4>
           </div>
+          {isPendingAcceptance && (
+            <p className="text-[9px] font-medium text-amber-600">Awaiting therapist acceptance</p>
+          )}
           <p className="text-[9px] text-muted-foreground uppercase tracking-wide">
             {timeStr}
           </p>
@@ -78,6 +82,9 @@ export function EventCard({ event, style, onClick }: EventCardProps) {
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">
             {timeStr}
           </p>
+          {isPendingAcceptance && (
+            <p className="text-[10px] font-medium text-amber-600 mb-2">Awaiting therapist acceptance</p>
+          )}
 
           {event.participants.length > 0 && (
             <div className="flex items-center gap-1.5 mb-2">

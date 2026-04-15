@@ -16,6 +16,9 @@ import {
 } from "recharts";
 import { RefreshCw, DollarSign, TrendingUp, TrendingDown, FileText, AlertTriangle } from "lucide-react";
 import { usePageView } from "@/hooks/usePageView";
+import { ExecutiveBrandValuation } from "@/components/shared/executive-brand-valuation";
+import { ExecutiveFinancePanel } from "@/components/shared/executive-finance-panel";
+import { DailyTractionStrip } from "@/components/shared/daily-traction-strip";
 
 interface FinanceOverview {
   total_revenue?: number;
@@ -81,6 +84,10 @@ export default function CfoDashboardPage() {
           Refresh
         </Button>
       </div>
+
+      <ExecutiveBrandValuation mode="panel" />
+      <DailyTractionStrip role="cfo" />
+      <ExecutiveFinancePanel role="cfo" />
 
       {error && (
         <Alert variant="destructive">

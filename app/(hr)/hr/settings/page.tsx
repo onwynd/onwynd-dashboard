@@ -44,11 +44,18 @@ export default function HRSettingsPage() {
   const [settings, setSettings] = useState<HRSettings>(DEFAULTS);
   const [saving, setSaving] = useState<string | null>(null);
 
-  useEffect(() => {
-    client.get("/api/v1/admin/settings").then((res) => {
+  const loadSettings = async () => {
+    try {
+      const res = await client.get("/api/v1/admin/settings");
       const hr = res.data?.hr;
       if (hr) setSettings((prev) => ({ ...prev, ...hr }));
-    }).catch(() => {});
+    } catch {
+      // Keep defaults/UI state if load fails
+    }
+  };
+
+  useEffect(() => {
+    loadSettings();
   }, []);
 
   const patch = (key: keyof HRSettings, value: unknown) =>
@@ -77,7 +84,13 @@ export default function HRSettingsPage() {
             notify_payroll_processed: settings.notify_payroll_processed,
           };
 
-      await client.put("/api/v1/admin/settings/hr", payload);
+      const res = await client.put("/api/v1/admin/settings/hr", payload);
+      const saved = res.data?.data;
+      if (saved && typeof saved === "object") {
+        setSettings((prev) => ({ ...prev, ...(saved as Partial<HRSettings>) }));
+      } else {
+        await loadSettings();
+      }
       toast({ title: "Saved", description: "HR settings updated." });
     } catch {
       toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });

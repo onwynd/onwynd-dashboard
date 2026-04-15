@@ -11,12 +11,15 @@ function isSecureRequest(req: NextRequest): boolean {
 
 export async function POST(req: NextRequest) {
   let token: string | null = null;
+  let userFromClient: Record<string, unknown> | null = null;
 
   try {
-    const body = await req.json() as { token?: unknown };
+    const body = await req.json() as { token?: unknown; user?: unknown };
     token = typeof body.token === "string" && body.token.trim().length > 0 ? body.token.trim() : null;
+    userFromClient = body.user && typeof body.user === "object" ? (body.user as Record<string, unknown>) : null;
   } catch {
     token = null;
+    userFromClient = null;
   }
 
   if (!token) {
@@ -37,13 +40,32 @@ export async function POST(req: NextRequest) {
   }
 
   const payload = await meResponse.json() as { data?: unknown };
-  const user = payload?.data ?? payload;
+  const user = (payload?.data ?? payload ?? userFromClient) as {
+    id?: number | string | null;
+    email?: string | null;
+    role?: { slug?: string | null } | string | null;
+    all_roles?: unknown;
+    primary_role?: string | null;
+    roles?: unknown;
+  };
+  const primaryRole =
+    (typeof user?.primary_role === "string" && user.primary_role.trim().length > 0 && user.primary_role.trim()) ||
+    (typeof user?.role === "string" ? user.role : user?.role?.slug) ||
+    "patient";
+  const allRoles = Array.isArray(user?.roles)
+    ? user.roles
+    : Array.isArray(user?.all_roles)
+      ? user.all_roles
+      : [primaryRole];
   const sessionState = buildAuthSessionState(user as {
     id?: number | string | null;
     email?: string | null;
     role?: { slug?: string | null } | string | null;
     all_roles?: unknown;
-  });
+  }, primaryRole);
+  sessionState.allRoles = Array.isArray(allRoles)
+    ? Array.from(new Set(allRoles.filter((role): role is string => typeof role === "string" && role.trim().length > 0)))
+    : [sessionState.primaryRole];
 
   const response = NextResponse.json({ success: true, data: sessionState });
   const secure = isSecureRequest(req);

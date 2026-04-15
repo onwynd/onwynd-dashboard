@@ -18,6 +18,10 @@ import { toast } from "@/components/ui/use-toast";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatCardsShimmer } from "@/components/shared/shimmer-skeleton";
 import { PageHeader } from "@/components/shared/page-header";
+import { StickyNotes } from "@/components/shared/sticky-notes";
+import { ExecutiveBrandValuation } from "@/components/shared/executive-brand-valuation";
+import { ExecutiveFinancePanel } from "@/components/shared/executive-finance-panel";
+import { DailyTractionStrip } from "@/components/shared/daily-traction-strip";
 
 interface OperationsData {
   sales_health?: {
@@ -86,6 +90,10 @@ export default function OperationsOverviewPage() {
           Refresh
         </Button>
       </PageHeader>
+
+      <ExecutiveBrandValuation mode="panel" />
+      <DailyTractionStrip role="coo" />
+      <ExecutiveFinancePanel role="coo" />
 
       {/* Stat cards */}
       {loading && !data ? (
@@ -281,6 +289,7 @@ export default function OperationsOverviewPage() {
           </CardContent>
         </Card>
       </div>
+      <StickyNotes roleSlug="coo" />
     </div>
   );
 }

@@ -84,6 +84,38 @@ export default function CrisisAlertsPage() {
     }
   };
 
+  const contact = async (alert: CrisisAlert) => {
+    const subject = `Crisis Alert Escalation - User ${alert.user_id}`;
+    const body = [
+      "Clinical escalation required.",
+      "",
+      `Alert ID: ${alert.id}`,
+      `User ID: ${alert.user_id}`,
+      `User Name: ${alert.user_name ?? "Unknown"}`,
+      `Session ID: ${alert.session_id}`,
+      `Severity: ${alert.severity}`,
+      `Triggered At: ${alert.created_at}`,
+      "",
+      `Trigger Context: ${alert.trigger}`,
+    ].join("\n");
+
+    const mailto = `mailto:support@onwynd.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailto, "_blank");
+
+    try {
+      await navigator.clipboard.writeText(body);
+      toast({
+        title: "Escalation draft opened",
+        description: "Email draft opened and crisis context copied to clipboard.",
+      });
+    } catch {
+      toast({
+        title: "Escalation draft opened",
+        description: "Email draft opened with alert details for support handover.",
+      });
+    }
+  };
+
   const open = alerts.filter((alert) => alert.status !== "resolved");
   const resolved = alerts.filter((alert) => alert.status === "resolved");
 
@@ -138,12 +170,17 @@ export default function CrisisAlertsPage() {
                         {format(new Date(alert.created_at), "MMM d, yyyy HH:mm")}
                       </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Button size="sm" variant="outline" className="gap-1.5">
+                    <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 w-full sm:w-auto"
+                        onClick={() => contact(alert)}
+                      >
                         <Phone className="h-3.5 w-3.5" />
                         Contact
                       </Button>
-                      <Button size="sm" variant="default" onClick={() => resolve(alert.id)}>
+                      <Button size="sm" variant="default" className="w-full sm:w-auto" onClick={() => resolve(alert.id)}>
                         Resolve
                       </Button>
                     </div>

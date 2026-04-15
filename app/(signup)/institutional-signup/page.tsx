@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { authService } from "@/lib/api/auth";
 import { Eye, EyeOff } from "lucide-react";
 import { PolicyModal, type PolicyType } from "@/components/auth/PolicyModal";
+import { getDashboardPathForRole } from "@/lib/auth/role-routing";
 
 const inputCls =
   "w-full px-4 py-3 rounded-2xl border-2 border-[rgba(75,52,37,0.12)] focus:border-[#9bb068] focus:outline-none bg-white text-[#4b3425] transition-colors placeholder:text-[rgba(75,52,37,0.35)]";
@@ -61,6 +62,13 @@ export default function InstitutionalSignupPage() {
 
     setIsLoading(true);
     try {
+      const roleSlug =
+        formData.organization_type === "corporate"
+          ? "corporate_hr"
+          : formData.organization_type === "university"
+            ? "university_admin"
+            : "ngo_admin";
+
       await authService.register({
         first_name: formData.admin_first_name,
         last_name: formData.admin_last_name,
@@ -68,9 +76,14 @@ export default function InstitutionalSignupPage() {
         password: formData.password,
         password_confirmation: formData.password_confirmation,
         phone: formData.admin_phone,
-        role_slug: "institutional",
+        role_slug: roleSlug,
+        organization_name: formData.organization_name,
+        organization_type: formData.organization_type,
+        industry: formData.industry,
+        size: formData.size,
+        admin_position: formData.admin_position,
       });
-      router.push("/institutional/dashboard");
+      router.push(getDashboardPathForRole(roleSlug));
     } catch (err: unknown) {
       let message = "Signup failed. Please try again.";
       if (typeof err === "object" && err !== null) {

@@ -1,4 +1,4 @@
-﻿import client from './client';
+import client from './client';
 import { parseApiResponse } from './utils';
 import { User } from './users';
 
@@ -8,22 +8,38 @@ export interface Member extends User {
   joinedAt: string;
 }
 
+function extractOrganizationId(organization: unknown): string | number | null {
+  if (!organization || typeof organization !== 'object') return null;
+  const id = (organization as Record<string, unknown>).id;
+  if (typeof id === 'string' || typeof id === 'number') return id;
+  return null;
+}
+
+async function requireOrganizationId(): Promise<string | number> {
+  const organization = await institutionalService.getOrganization();
+  const organizationId = extractOrganizationId(organization);
+  if (!organizationId) {
+    console.error('Institutional organization bootstrap failed: organization id is missing.');
+    throw new Error('Institutional organization context is missing.');
+  }
+  return organizationId;
+}
+
 export const institutionalService = {
   async getEngagement(period: '7d' | '30d' | '90d' = '30d') {
-    const organization = await this.getOrganization();
-    const organizationId = (organization as Record<string, unknown> | null)?.id ?? 1;
+    const organizationId = await requireOrganizationId();
     const response = await client.get(`/api/v1/institutional/organizations/${organizationId}/analytics/engagement`, {
       params: { period },
+      suppressErrorToast: true,
     });
     return parseApiResponse(response);
   },
 
   async getStats() {
-    // DB15: Use getOrganization() to avoid fragile array[0] pattern
-    const organization = await this.getOrganization();
-    const organizationId = (organization as Record<string, unknown> | null)?.id ?? 1;
+    const organizationId = await requireOrganizationId();
     const engagement = await client.get(`/api/v1/institutional/organizations/${organizationId}/analytics/engagement`, {
       params: { period: '30d' },
+      suppressErrorToast: true,
     });
     const engagementData = parseApiResponse(engagement) as any;
     const memberCount = engagementData?.member_count ?? 0;
@@ -39,16 +55,17 @@ export const institutionalService = {
   },
 
   async getMetrics() {
-    // DB15: Use getOrganization() to avoid fragile array[0] pattern
-    const organization = await this.getOrganization();
-    const organizationId = (organization as Record<string, unknown> | null)?.id ?? 1;
+    const organizationId = await requireOrganizationId();
     const engagementRes = await client.get(`/api/v1/institutional/organizations/${organizationId}/analytics/engagement`, {
       params: { period: '30d' },
+      suppressErrorToast: true,
     });
-    const atRiskRes = await client.get(`/api/v1/institutional/organizations/${organizationId}/analytics/at-risk`);
+    const atRiskRes = await client.get(`/api/v1/institutional/organizations/${organizationId}/analytics/at-risk`, {
+      suppressErrorToast: true,
+    });
     const engagementData = parseApiResponse(engagementRes) as any;
     const atRiskData = parseApiResponse(atRiskRes) as any;
-    const metrics = {
+    return {
       total_users: engagementData?.member_count ?? 0,
       active_users_this_month: engagementData?.active_users ?? 0,
       engagement_rate: engagementData?.member_count ? Math.round(((engagementData?.active_users ?? 0) / engagementData?.member_count) * 10000) / 100 : 0,
@@ -59,27 +76,28 @@ export const institutionalService = {
       cost_per_user: 0,
       estimated_roi: null,
     };
-    return metrics;
   },
 
   async getAtRisk(params?: Record<string, unknown>) {
-    // DB15: Use getOrganization() to avoid fragile array[0] pattern
-    const organization = await this.getOrganization();
-    const organizationId = (organization as Record<string, unknown> | null)?.id ?? 1;
-    const response = await client.get(`/api/v1/institutional/organizations/${organizationId}/analytics/at-risk`, { params });
+    const organizationId = await requireOrganizationId();
+    const response = await client.get(`/api/v1/institutional/organizations/${organizationId}/analytics/at-risk`, {
+      params,
+      suppressErrorToast: true,
+    });
     return parseApiResponse(response);
   },
 
   async getMonthlyReport(params?: Record<string, unknown>) {
-    // DB15: Use getOrganization() to avoid fragile array[0] pattern
-    const organization = await this.getOrganization();
-    const organizationId = (organization as Record<string, unknown> | null)?.id ?? 1;
-    const response = await client.get(`/api/v1/institutional/organizations/${organizationId}/analytics/monthly-report`, { params });
+    const organizationId = await requireOrganizationId();
+    const response = await client.get(`/api/v1/institutional/organizations/${organizationId}/analytics/monthly-report`, {
+      params,
+      suppressErrorToast: true,
+    });
     return parseApiResponse(response);
   },
 
   async getReferrals(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/institutional/referrals', { params });
+    const response = await client.get('/api/v1/institutional/referrals', { params, suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
@@ -99,13 +117,13 @@ export const institutionalService = {
   },
 
   async getPlans() {
-    const response = await client.get('/api/v1/institutional/subscriptions/plans');
+    const response = await client.get('/api/v1/institutional/subscriptions/plans', { suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
   // Document Management
   async getRecentDocuments(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/institutional/documents', { params });
+    const response = await client.get('/api/v1/institutional/documents', { params, suppressErrorToast: true });
     return parseApiResponse(response);
   },
 
@@ -125,7 +143,10 @@ export const institutionalService = {
 
   // Member Management
   async getMembers(organizationId: string | number, params?: Record<string, unknown>) {
-    const response = await client.get(`/api/v1/institutional/organizations/${organizationId}/members`, { params });
+    const response = await client.get(`/api/v1/institutional/organizations/${organizationId}/members`, {
+      params,
+      suppressErrorToast: true,
+    });
     return parseApiResponse(response);
   },
 
@@ -148,9 +169,7 @@ export const institutionalService = {
     const formData = new FormData();
     formData.append('file', file);
     const response = await client.post(`/api/v1/institutional/organizations/${organizationId}/members/import`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
     return parseApiResponse(response);
   },
@@ -176,15 +195,21 @@ export const institutionalService = {
     return parseApiResponse(response);
   },
 
-  // Per-Seat Quota Usage — institutional quota status endpoint
   async getQuotaUsage() {
-    const response = await client.get('/api/v1/institutional/quota/status');
+    const response = await client.get('/api/v1/institutional/quota/status', { suppressErrorToast: true });
     return response.data?.data ?? response.data;
   },
 
   async getStudentVerifications() {
-    const response = await client.get('/api/v1/institutional/student-verifications');
+    const response = await client.get('/api/v1/institutional/student-verifications', { suppressErrorToast: true });
+    return response.data?.data ?? response.data;
+  },
+
+  async getBillingInvoices(organizationId: string | number) {
+    const response = await client.get(
+      `/api/v1/institutional/organizations/${organizationId}/billing/invoices`,
+      { suppressErrorToast: true },
+    );
     return response.data?.data ?? response.data;
   },
 };
-

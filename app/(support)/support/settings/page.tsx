@@ -38,11 +38,20 @@ export default function SupportSettingsPage() {
   const [s, setS] = useState<SupportSettings>(DEFAULTS);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    client.get("/api/v1/admin/settings").then((res) => {
+  const loadSettings = async () => {
+    try {
+      const res = await client.get("/api/v1/admin/settings");
       const support = res.data?.support;
-      if (support) setS((prev) => ({ ...prev, ...support }));
-    }).catch(() => {});
+      if (support) {
+        setS((prev) => ({ ...prev, ...support }));
+      }
+    } catch {
+      // Keep defaults/UI state if load fails
+    }
+  };
+
+  useEffect(() => {
+    loadSettings();
   }, []);
 
   const patch = (key: keyof SupportSettings, value: unknown) =>
@@ -51,7 +60,13 @@ export default function SupportSettingsPage() {
   const save = async () => {
     setSaving(true);
     try {
-      await client.put("/api/v1/admin/settings/support", s);
+      const res = await client.put("/api/v1/admin/settings/support", s);
+      const saved = res.data?.data;
+      if (saved && typeof saved === "object") {
+        setS((prev) => ({ ...prev, ...(saved as Partial<SupportSettings>) }));
+      } else {
+        await loadSettings();
+      }
       toast({ title: "Saved", description: "Support settings updated." });
     } catch {
       toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });

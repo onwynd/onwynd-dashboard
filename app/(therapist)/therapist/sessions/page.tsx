@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { therapistService } from "@/lib/api/therapist";
 import { toast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,7 @@ import { Loader2, Video, Search, ChevronLeft, ChevronRight } from "lucide-react"
 
 interface Session {
   id: number;
+  uuid?: string;
   patient_name: string;
   patient_email: string;
   is_anonymous: boolean;
@@ -59,8 +60,9 @@ export default function SessionsPage() {
   const [view, setView] = useState("week");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setIsLoading(true);
     try {
       const params: Record<string, unknown> = { page, per_page: ITEMS_PER_PAGE };
@@ -81,6 +83,7 @@ export default function SessionsPage() {
         const fullName  = [firstName, lastName].filter(Boolean).join(" ") || "Patient";
         return {
           id: s.id,
+          uuid: s.uuid,
           patient_name:    s.patient_name    ?? fullName,
           patient_email:   s.patient_email   ?? (patientUser.email ?? ""),
           is_anonymous:    s.is_anonymous    ?? false,
@@ -102,9 +105,22 @@ export default function SessionsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, search, statusFilter, view]);
 
-  useEffect(() => { load(); }, [view, page, statusFilter, search]);
+  useEffect(() => { load(); }, [load]);
+
+  const handleConfirm = async (sessionId: number) => {
+    setConfirmingId(sessionId);
+    try {
+      await therapistService.confirmSession(sessionId);
+      toast({ title: "Session confirmed", description: "The patient has been notified." });
+      await load();
+    } catch {
+      toast({ title: "Error", description: "Could not confirm this session.", variant: "destructive" });
+    } finally {
+      setConfirmingId(null);
+    }
+  };
 
   const lastPage = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
@@ -136,6 +152,7 @@ export default function SessionsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="pending_confirmation">Pending Confirmation</SelectItem>
             <SelectItem value="scheduled">Scheduled</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -175,7 +192,7 @@ export default function SessionsPage() {
             <TableBody>
               {sessions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-40 text-center text-muted-foreground">
                     No sessions found for this period.
                   </TableCell>
                 </TableRow>
@@ -219,6 +236,18 @@ export default function SessionsPage() {
                       {s.notes ?? "—"}
                     </TableCell>
                     <TableCell>
+                      {s.status === "pending_confirmation" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 gap-1.5 text-xs"
+                          onClick={() => handleConfirm(s.id)}
+                          disabled={confirmingId === s.id}
+                        >
+                          {confirmingId === s.id ? <Loader2 className="size-3 animate-spin" /> : null}
+                          Accept
+                        </Button>
+                      )}
                       {(s.status === "scheduled" || s.status === "in_progress") && (
                         <Button asChild size="sm" className="h-7 gap-1.5 text-xs">
                           <Link href={`/therapist/sessions/${s.id}/room`}>

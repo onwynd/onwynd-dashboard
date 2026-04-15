@@ -49,6 +49,7 @@ import {
   ShieldAlert,
   Clock,
   Users,
+  Star,
   Lock,
   Mail,
   Trash2,
@@ -70,6 +71,8 @@ interface TherapistProfile {
   verified_at: string | null;
   rating_average: string | null;
   total_sessions: number;
+  is_home_featured?: boolean;
+  home_featured_until?: string | null;
 }
 
 interface Therapist {
@@ -197,7 +200,9 @@ export default function TherapistsPage() {
       if (statusTab !== "all") params.status = statusTab;
       if (verificationTab !== "all") params.verification_status = verificationTab;
 
-      const res = await adminService.getTherapists(params);
+      const res = verificationTab === 'pending'
+        ? await adminService.getPendingTherapists()
+        : await adminService.getTherapists(params);
       const data = (res as { therapists?: unknown } ).therapists ?? res;
       const items = (data as { data?: Therapist[] })?.data ?? (Array.isArray(data) ? data : []);
       setTherapists(items);
@@ -270,6 +275,26 @@ export default function TherapistsPage() {
       load();
     } catch {
       toast({ title: "Error", description: "Action failed", variant: "destructive" });
+    }
+  };
+
+  const handleToggleHomepageFeatured = async (t: Therapist) => {
+    const isFeatured = Boolean(t.therapist_profile?.is_home_featured);
+    try {
+      await adminService.setTherapistHomepageFeatured(t.id, !isFeatured, 3);
+      toast({
+        title: !isFeatured ? "Pinned to Homepage" : "Removed from Homepage",
+        description: !isFeatured
+          ? `${t.name} will stay featured for about 3 hours.`
+          : `${t.name} is no longer featured.`,
+      });
+      load();
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to update homepage featured status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -497,6 +522,7 @@ export default function TherapistsPage() {
                 <TableHead className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Specialty</TableHead>
                 <TableHead className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Account</TableHead>
                 <TableHead className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Verification</TableHead>
+                <TableHead className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Homepage</TableHead>
                 <TableHead className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Sessions</TableHead>
                 <TableHead className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Registered</TableHead>
                 <TableHead className="px-4 py-3 w-10" />
@@ -504,10 +530,10 @@ export default function TherapistsPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableBodyShimmer rows={6} cols={8} />
+                <TableBodyShimmer rows={6} cols={9} />
               ) : therapists.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8}>
+                  <TableCell colSpan={9}>
                     <div className="flex flex-col items-center justify-center py-16">
                       <Stethoscope className="w-12 h-12 text-gray-200 mb-4" />
                       <p className="text-sm font-medium text-gray-600">No therapists found</p>
@@ -550,6 +576,16 @@ export default function TherapistsPage() {
                             </button>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        {profile?.is_home_featured ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
+                            <Star className="w-3 h-3" />
+                            Featured
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-gray-600">{profile?.total_sessions ?? 0}</TableCell>
                       <TableCell className="px-4 py-3 text-sm text-gray-400">
@@ -611,6 +647,15 @@ export default function TherapistsPage() {
                                 {t.is_active
                                   ? <><UserX className="w-4 h-4 mr-2" /> Deactivate Account</>
                                   : <><UserCheck className="w-4 h-4 mr-2" /> Activate Account</>}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleToggleHomepageFeatured(t)}
+                                className={profile?.is_home_featured ? "text-amber-700" : "text-teal"}
+                              >
+                                <Star className="w-4 h-4 mr-2" />
+                                {profile?.is_home_featured
+                                  ? "Unfeature from Homepage"
+                                  : "Feature on Homepage (3h)"}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

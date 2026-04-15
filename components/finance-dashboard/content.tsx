@@ -7,6 +7,9 @@ import { TransactionsList } from "./transactions-list";
 import { ExpenseBreakdownChart } from "./expense-breakdown-chart";
 import { useFinanceStore } from "@/store/finance-store";
 import { cn } from "@/lib/utils";
+import { ExecutiveBrandValuation } from "@/components/shared/executive-brand-valuation";
+import { ExecutiveFinancePanel } from "@/components/shared/executive-finance-panel";
+import { DailyTractionStrip } from "@/components/shared/daily-traction-strip";
 
 export function DashboardContent() {
   const layoutDensity = useFinanceStore((state) => state.layoutDensity);
@@ -36,6 +39,9 @@ export function DashboardContent() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Finance Dashboard</h2>
       </div>
+      <ExecutiveBrandValuation mode="panel" />
+      <DailyTractionStrip role="cfo" />
+      <ExecutiveFinancePanel role="cfo" />
       <StatsCards />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <RevenueChart />

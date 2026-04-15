@@ -62,6 +62,7 @@ interface SupportStats {
   in_progress?: number;
   resolved?: number;
   closed?: number;
+  unavailable?: boolean;
 }
 
 function statusBadge(status: string) {
@@ -159,6 +160,13 @@ export default function AdminSupportPage() {
             </Card>
           ))}
         </div>
+      )}
+      {stats?.unavailable && (
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-muted-foreground">Stats unavailable right now.</p>
+          </CardContent>
+        </Card>
       )}
 
       <div className="flex items-center gap-3 flex-wrap">

@@ -9,6 +9,8 @@ export interface Event {
   participants: string[];
   meetingLink?: string;
   timezone?: string;
+  status?: string;
+  sessionUuid?: string;
 }
 
 export const calendarService = {

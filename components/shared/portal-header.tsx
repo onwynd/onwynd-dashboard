@@ -7,6 +7,8 @@ import { Search } from "lucide-react";
 import { UserAvatarMenu } from "@/components/shared/user-avatar-menu";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { RoleSwitcher } from "@/components/shared/role-switcher";
+import Cookies from "js-cookie";
+import { ExecutiveBrandValuation } from "@/components/shared/executive-brand-valuation";
 
 interface PortalHeaderProps {
   /** API base path for fetching notifications, e.g. "/api/v1" */
@@ -22,6 +24,9 @@ export function PortalHeader({
   notificationsPath = "/settings/notifications",
   searchPlaceholder = "Search...",
 }: PortalHeaderProps) {
+  const roleSlug = Cookies.get("user_role");
+  const showExecutiveValuation = roleSlug === "ceo" || roleSlug === "coo";
+
   return (
     <header className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-b bg-card sticky top-0 z-10 w-full">
       <SidebarTrigger className="-ml-1 sm:-ml-2" />
@@ -36,6 +41,7 @@ export function PortalHeader({
 
       <div className="flex-1" />
 
+      {showExecutiveValuation && <ExecutiveBrandValuation mode="chip" />}
       <ThemeToggle />
       <RoleSwitcher />
       <NotificationBell basePath={notificationsBasePath} notificationsPath={notificationsPath} />

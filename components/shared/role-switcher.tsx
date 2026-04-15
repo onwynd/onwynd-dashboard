@@ -22,11 +22,10 @@ export function RoleSwitcher() {
   useEffect(() => {
     const role = Cookies.get('user_role');
     const allRolesRaw = Cookies.get('user_all_roles');
-    const localActiveRole = localStorage.getItem('active_dashboard_role');
 
     if (role) {
       setPrimaryRole(role);
-      setActiveRole(localActiveRole || role);
+      setActiveRole(role);
     }
 
     if (allRolesRaw) {
@@ -41,11 +40,15 @@ export function RoleSwitcher() {
 
   if (allRoles.length <= 1) return null;
 
-  const handleRoleSwitch = (role: string) => {
-    localStorage.setItem('active_dashboard_role', role);
+  const handleRoleSwitch = async (role: string) => {
+    await fetch("/api/auth/session/switch-role", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ role }),
+    });
     setActiveRole(role);
-    
-    // Redirect to the new dashboard
+    router.refresh();
     const path = getDashboardPathForRole(role);
     router.push(path);
   };

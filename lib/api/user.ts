@@ -23,7 +23,7 @@ export const ROLE_EXTRA_CATEGORIES: Record<string, Array<keyof NotificationPrefe
   therapist:         ['distress_alerts'],
   institution_admin: ['member_distress', 'org_credits'],
   university_admin:  ['member_distress', 'org_credits'],
-  hr:                ['member_distress', 'org_credits'],
+  corporate_hr:      ['member_distress', 'org_credits'],
   admin:             ['distress_alerts'],
   super_admin:       ['distress_alerts'],
   coo:               ['distress_alerts', 'org_credits'],

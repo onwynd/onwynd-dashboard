@@ -1,3 +1,5 @@
+
+// filepath: app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -8,6 +10,7 @@ import { ToastProvider } from "@/components/ui/use-toast";
 import { DashboardIPProtectionProvider } from "@/providers/IPProtectionProvider";
 import { BrandThemeProvider } from "@/components/shared/brand-theme-provider";
 import { PwaInit } from "@/components/shared/pwa-init";
+import { AuthProvider } from "@/providers/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -88,15 +91,17 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-          <QueryProvider>
-              <DashboardIPProtectionProvider>
-                <BrandThemeProvider>
-                  <ToastProvider>
-                    {children}
-                    <PwaInit />
-                  </ToastProvider>
-                </BrandThemeProvider>
-              </DashboardIPProtectionProvider>
+            <QueryProvider>
+              <AuthProvider>
+                <DashboardIPProtectionProvider>
+                  <BrandThemeProvider>
+                    <ToastProvider>
+                      {children}
+                      <PwaInit />
+                    </ToastProvider>
+                  </BrandThemeProvider>
+                </DashboardIPProtectionProvider>
+              </AuthProvider>
             </QueryProvider>
           </ThemeProvider>
         </ErrorBoundary>

@@ -3,6 +3,7 @@ import { financeService } from "@/lib/api/finance";
 import { adminService } from "@/lib/api/admin";
 import { marketingService } from "@/lib/api/marketing";
 import { salesService } from "@/lib/api/sales";
+import client from "@/lib/api/client";
 
 type KPI = {
   id: string;
@@ -12,6 +13,8 @@ type KPI = {
   changeType?: "increase" | "decrease" | "neutral";
 };
 
+type Dict = Record<string, unknown>;
+
 type SeriesPoint = {
   name: string;
   value: number;
@@ -19,6 +22,37 @@ type SeriesPoint = {
 };
 
 type Period = "7days" | "30days" | "3months" | "6months" | "12months";
+
+function asDict(value: unknown): Dict {
+  return typeof value === "object" && value !== null ? (value as Dict) : {};
+}
+
+function asArray<T = unknown>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function toNumber(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat("en-NG", { maximumFractionDigits: 0 }).format(value);
+}
+
+function pickNumberByKeys(source: Dict, keys: string[]): number {
+  for (const key of keys) {
+    if (key in source) {
+      const parsed = toNumber(source[key]);
+      if (parsed > 0) return parsed;
+    }
+  }
+  return 0;
+}
 
 interface CEOState {
   isLoading: boolean;
@@ -64,13 +98,15 @@ export const useCEOStore = create<CEOState>((set, get) => ({
             return "monthly";
         }
       })();
-      const [finStatsRes, finRevenueRes, adminStatsRes, userGrowthRes, leadSrcRes, salesStatsRes] = await Promise.all([
+      const [finStatsRes, finRevenueRes, adminStatsRes, userGrowthRes, leadSrcRes, salesStatsRes, aiCostRes, webOverviewRes] = await Promise.all([
         financeService.getStats(),
         financeService.getRevenueData(revenuePeriod),
         adminService.getStats(),
         adminService.getUserGrowthReport({ period: selected }),
         marketingService.getLeadSources(selected === "7days" ? "7days" : selected === "3months" ? "90days" : selected),
         salesService.getStats(),
+        adminService.getAICostSummary("7d"),
+        client.get("/api/v1/admin/analytics/overview", { params: { days: 1 }, suppressErrorToast: true }),
       ]);
 
       const kpis: KPI[] = [];
@@ -122,6 +158,52 @@ export const useCEOStore = create<CEOState>((set, get) => ({
       type AlertRow = { id?: string | number; uuid?: string; message?: string; level?: string };
       const alerts =
         Array.isArray(aStats?.alerts) ? (aStats.alerts as AlertRow[]).map((x) => ({ id: String(x.id ?? x.uuid ?? x.message), message: String(x.message ?? ""), level: String(x.level ?? "info") })) : [];
+
+      const adminStats = asDict(aStats);
+      const adminCards = asArray<Dict>(adminStats);
+      const aiCostData = asDict((aiCostRes as any)?.data ?? aiCostRes);
+      const aiCostPayload = asDict(aiCostData.data ?? aiCostData);
+      const webData = asDict((webOverviewRes as any)?.data?.data ?? (webOverviewRes as any)?.data ?? {});
+
+      const dailyUsersFromKeys = pickNumberByKeys(adminStats, [
+        "daily_active_users",
+        "active_users_today",
+        "today_active_users",
+        "daily_users",
+      ]);
+      const dailyUsersFromCards = adminCards.reduce((acc, card) => {
+        const title = String(card.title ?? "").toLowerCase();
+        if (!title.includes("users")) return acc;
+        if (!title.includes("today") && !title.includes("daily")) return acc;
+        return Math.max(acc, toNumber(card.value));
+      }, 0);
+      const dailyUsers = Math.max(dailyUsersFromKeys, dailyUsersFromCards, toNumber(webData.unique_visitors));
+
+      const dailyTokens = Math.max(
+        toNumber(aiCostPayload.daily_tokens),
+        toNumber(asDict(asArray(aiCostPayload.daily_trend).at(-1)).tokens),
+      );
+      const dailyAiConversations = Math.max(
+        toNumber(aiCostPayload.daily_conversations),
+        toNumber(asDict(asArray(aiCostPayload.daily_trend).at(-1)).conversations),
+      );
+      const dailySignups = Math.max(
+        pickNumberByKeys(adminStats, ["new_signups_today", "signups_today", "daily_signups"]),
+        toNumber(webData.new_visitors),
+      );
+
+      if (dailyTokens >= 0) {
+        kpis.unshift({ id: "daily_tokens", title: "Daily Token Consumption", value: formatNumber(dailyTokens) });
+      }
+      if (dailyUsers >= 0) {
+        kpis.unshift({ id: "daily_users", title: "Daily Users", value: formatNumber(dailyUsers) });
+      }
+      if (dailyAiConversations >= 0) {
+        kpis.push({ id: "daily_ai_conversations", title: "AI Conversations Today", value: formatNumber(dailyAiConversations) });
+      }
+      if (dailySignups >= 0) {
+        kpis.push({ id: "daily_signups", title: "New Users Today", value: formatNumber(dailySignups) });
+      }
 
       const computedAlerts: { id: string; message: string; level: string }[] = [];
       const lastRev = revenueSeries.at(-1);

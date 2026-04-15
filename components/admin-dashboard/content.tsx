@@ -1,39 +1,117 @@
+
+// filepath: components/admin-dashboard/content.tsx
 "use client";
 
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 import { useAdminStore } from "@/store/admin-store";
-import { WelcomeSection } from "./welcome-section";
 import { StatsCards } from "./stats-cards";
-import { LeadSourcesChart } from "./lead-sources-chart";
 import { RevenueFlowChart } from "./revenue-flow-chart";
 import { DealsTable } from "./deals-table";
 import { ActiveUsersWidget } from "./active-users-widget";
-import { QuotaAnalyticsWidget } from "./quota-analytics-widget";
+import { QuotaWidget } from "./quota-widget";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function DashboardContent() {
-  const fetchStats = useAdminStore((state) => state.fetchStats);
-  const fetchRevenueFlow = useAdminStore((state) => state.fetchRevenueFlow);
-  const fetchLeadSources = useAdminStore((state) => state.fetchLeadSources);
-  const fetchDeals = useAdminStore((state) => state.fetchDeals);
+  const router = useRouter();
+  const { isAuthenticated, hasRole } = useAuth();
+
+  const {
+    stats,
+    revenueFlow,
+    deals,
+    activeUsers,
+    quotaOverview,
+    loadingStats,
+    loadingRevenue,
+    loadingDeals,
+    loadingActiveUsers,
+    loadingQuota,
+    fetchStats,
+    fetchRevenueFlow,
+    fetchDeals,
+    fetchActiveUsers,
+    fetchQuotaOverview,
+  } = useAdminStore();
 
   useEffect(() => {
-    fetchStats();
-    fetchRevenueFlow("6months");
-    fetchLeadSources("30days");
-    fetchDeals();
-  }, [fetchStats, fetchRevenueFlow, fetchLeadSources, fetchDeals]);
+    if (isAuthenticated === false) {
+      router.push("/login");
+    } else if (isAuthenticated === true && !hasRole("admin")) {
+      router.push("/unauthorized");
+    }
+  }, [isAuthenticated, hasRole, router]);
+  
+  useEffect(() => {
+    if (isAuthenticated && hasRole("admin")) {
+        fetchStats();
+        fetchRevenueFlow();
+        fetchDeals();
+        fetchActiveUsers();
+        fetchQuotaOverview();
+
+        const interval = setInterval(() => {
+            fetchStats();
+            fetchActiveUsers();
+        }, 60000); // Refresh every minute
+
+        return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, hasRole, fetchStats, fetchRevenueFlow, fetchDeals, fetchActiveUsers, fetchQuotaOverview]);
+
+  if (!isAuthenticated || !hasRole("admin")) {
+    return (
+        <div className="w-full h-full flex items-center justify-center">
+            <p>Loading...</p>
+        </div>
+    );
+  }
 
   return (
-    <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 bg-background w-full">
-      <WelcomeSection />
-      <StatsCards />
-      <div className="flex flex-col xl:flex-row gap-4 sm:gap-6">
-        <LeadSourcesChart />
-        <RevenueFlowChart />
+    <div className="grid grid-cols-12 gap-6">
+      <div className="col-span-12">
+        {loadingStats ? <StatsSkeleton /> : <StatsCards stats={stats} />}
       </div>
-      <QuotaAnalyticsWidget />
-      <DealsTable />
-      <ActiveUsersWidget />
-    </main>
+
+      <div className="col-span-12 lg:col-span-8">
+        {loadingRevenue ? <ChartSkeleton /> : <RevenueFlowChart data={revenueFlow} />}
+      </div>
+
+      <div className="col-span-12 lg:col-span-4">
+        {loadingDeals ? <TableSkeleton /> : <DealsTable deals={deals} />}
+      </div>
+
+      <div className="col-span-12 lg:col-span-6">
+        {loadingActiveUsers ? <TableSkeleton /> : <ActiveUsersWidget users={activeUsers} />}
+      </div>
+      
+      <div className="col-span-12 lg:col-span-6">
+        {loadingQuota ? <QuotaSkeleton /> : <QuotaWidget overview={quotaOverview} />}
+      </div>
+    </div>
   );
+}
+
+function StatsSkeleton() {
+    return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <Skeleton className="h-[126px] w-full" />
+            <Skeleton className="h-[126px] w-full" />
+            <Skeleton className="h-[126px] w-full" />
+            <Skeleton className="h-[126px] w-full" />
+        </div>
+    );
+}
+
+function ChartSkeleton() {
+    return <Skeleton className="h-[350px] w-full" />;
+}
+
+function TableSkeleton() {
+    return <Skeleton className="h-[300px] w-full" />;
+}
+
+function QuotaSkeleton() {
+    return <Skeleton className="h-[300px] w-full" />;
 }

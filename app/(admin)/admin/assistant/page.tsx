@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import client from "@/lib/api/client";
-import { calendarService } from "@/lib/api/calendar";
+import { usePathname } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,15 +25,18 @@ import {
 import {
   Loader2, Send, Sparkles, User, Trash2, Plus,
   MessageSquare, ChevronLeft, Brain, TrendingUp,
-  Cpu, Paperclip, FileText, Image, Music, X,
-  CalendarPlus, CalendarIcon, CheckCircle2,
+  Cpu, Paperclip, FileText, Music, X,
+  CalendarPlus, CalendarIcon, CheckCircle2, Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { ExecutiveBrandValuation } from "@/components/shared/executive-brand-valuation";
+import { ExecutiveFinancePanel } from "@/components/shared/executive-finance-panel";
 
 // ── Markdown renderer (handles bold, italic, headings, lists, code) ──────────
 function renderMarkdown(text: string): string {
-  return text
+  const safe = escapeHtml(text);
+  return safe
     // fenced code blocks
     .replace(/```[\s\S]*?```/g, (m) => {
       const code = m.replace(/^```[^\n]*\n?/, "").replace(/```$/, "").trim();
@@ -67,15 +70,13 @@ function escapeHtml(t: string) {
 }
 
 // ── Scheduling intent detection ───────────────────────────────────────────────
-const SCHEDULE_VERBS   = ["schedule", "book", "set up", "create", "arrange", "plan", "add", "put"];
-const SCHEDULE_NOUNS   = ["meeting", "call", "event", "demo", "sync", "session", "standup", "interview", "check-in", "1:1", "kickoff", "kick-off"];
+const SCHEDULE_KEYWORDS = ["schedule", "add event", "create appointment", "book", "remind me"];
+const SCHEDULE_NOUNS = ["meeting", "call", "event", "demo", "sync", "session", "standup", "interview", "check-in", "1:1", "kickoff", "kick-off"];
 const TIME_SLOTS_AI    = ["07:00","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00"];
 
 function detectSchedulingIntent(text: string): boolean {
   const lower = text.toLowerCase();
-  const hasVerb = SCHEDULE_VERBS.some((v) => lower.includes(v));
-  const hasNoun = SCHEDULE_NOUNS.some((n) => lower.includes(n));
-  return hasVerb && hasNoun;
+  return SCHEDULE_KEYWORDS.some((keyword) => lower.includes(keyword));
 }
 
 /** Best-effort extract of title, date, time from natural language */
@@ -143,6 +144,7 @@ interface Message {
   content: string;
   timestamp: Date;
   scheduleSeed?: ScheduleSeed;
+  eventsList?: Array<{ title: string; time: string }>;
 }
 
 interface ConversationThread {
@@ -158,6 +160,10 @@ const CAPABILITIES = [
 ];
 
 export default function AdminAssistantPage() {
+  const pathname = usePathname();
+  const roleKey = pathname.startsWith("/ceo") ? "ceo" : pathname.startsWith("/coo") ? "coo" : "admin";
+  const calendarRoleSegment = roleKey === "ceo" ? "CEO" : roleKey === "coo" ? "COO" : "admin";
+  const calendarApiPath = calendarRoleSegment === "admin" ? "/api/admin/calendar/events" : `/api/${calendarRoleSegment}/calendar/events`;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -182,6 +188,33 @@ export default function AdminAssistantPage() {
   const [scheduleSaving, setScheduleSaving] = useState(false);
   const [scheduleCreatedId, setScheduleCreatedId] = useState<string | null>(null);
 
+  const loadTodayEvents = useCallback(async () => {
+    try {
+      const response = await fetch(`${calendarApiPath}?date=today`, {
+        method: "GET",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) return;
+      const events = (await response.json()) as Array<{ title?: string; time?: string }>;
+      const normalized = Array.isArray(events)
+        ? events.map((e) => ({ title: e.title ?? "Untitled", time: e.time ?? "10:00" }))
+        : [];
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `today-events-${Date.now()}`,
+          role: "assistant",
+          content: normalized.length > 0 ? "Here are your events for today:" : "You have no events scheduled for today.",
+          timestamp: new Date(),
+          eventsList: normalized,
+        },
+      ]);
+    } catch {
+      // non-critical
+    }
+  }, [calendarApiPath]);
+
   const stripTags = (text: string) =>
     text
       .replace(/\[ADMIN_MEMO:[\s\S]*?\]/g, "")
@@ -195,6 +228,15 @@ export default function AdminAssistantPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    const onResize = () => {
+      setShowSidebar(window.innerWidth >= 1024);
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Load past conversation threads on mount
   const loadThreads = useCallback(async () => {
@@ -210,6 +252,9 @@ export default function AdminAssistantPage() {
   useEffect(() => {
     loadThreads();
   }, [loadThreads]);
+  useEffect(() => {
+    loadTodayEvents();
+  }, [loadTodayEvents]);
 
   // Load a specific conversation thread
   const loadConversation = async (id: string) => {
@@ -330,9 +375,37 @@ export default function AdminAssistantPage() {
 
       setMessages((prev) => [...prev, assistantMsg]);
 
+      if (/\b(what's on my calendar today|what do i have today|calendar today)\b/i.test(text)) {
+        await loadTodayEvents();
+      }
+
       // Scheduling intent — offer to create calendar event
       if (detectSchedulingIntent(text)) {
         const seed = parseSchedulingHints(text);
+        const payload = {
+          title: seed.title,
+          date: seed.date ? format(seed.date, "yyyy-MM-dd") : new Date().toISOString().slice(0, 10),
+          time: seed.time,
+          description: text,
+          attendees: [],
+        };
+        const createResponse = await fetch(calendarApiPath, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (createResponse.ok) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `scheduled-${Date.now()}`,
+              role: "assistant",
+              content: `I've scheduled ${payload.title} for ${payload.date} at ${payload.time}.`,
+              timestamp: new Date(),
+            },
+          ]);
+        }
         const seedMsg: Message = {
           id: `schedule-${Date.now()}`,
           role: "assistant",
@@ -391,20 +464,26 @@ export default function AdminAssistantPage() {
       const [h, m] = scheduleTime.split(":").map(Number);
       const start = new Date(scheduleDate);
       start.setHours(h, m, 0, 0);
-      const end = new Date(start);
-      end.setMinutes(end.getMinutes() + 60);
 
-      const created = await calendarService.addEvent({
-        title: scheduleTitle,
-        startTime: start.toISOString(),
-        endTime: end.toISOString(),
-        date: format(scheduleDate, "yyyy-MM-dd"),
-        participants: scheduleParticipants
-          ? scheduleParticipants.split(",").map((s) => s.trim()).filter(Boolean)
-          : [],
-        meetingLink: scheduleLink || undefined,
+      const created = await fetch(calendarApiPath, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          title: scheduleTitle,
+          date: format(scheduleDate, "yyyy-MM-dd"),
+          time: format(start, "HH:mm"),
+          description: scheduleLink || "",
+          attendees: scheduleParticipants
+            ? scheduleParticipants.split(",").map((s) => s.trim()).filter(Boolean)
+            : [],
+        }),
       });
-      setScheduleCreatedId(created?.id ?? "ok");
+      if (!created.ok) {
+        throw new Error("Create event failed");
+      }
+      const createdData = (await created.json()) as { id?: string };
+      setScheduleCreatedId(createdData?.id ?? "ok");
       toast({ title: "Event created", description: `"${scheduleTitle}" added to your calendar.` });
     } catch {
       toast({ title: "Error", description: "Could not create the event. Please try again.", variant: "destructive" });
@@ -414,6 +493,7 @@ export default function AdminAssistantPage() {
   };
 
   const isNewChat = messages.length === 0 && !conversationId;
+  const assistantTitle = roleKey === "ceo" ? "Onwynd CEO Intelligence" : roleKey === "coo" ? "Onwynd COO Intelligence" : "Onwynd Admin Intelligence";
 
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
@@ -465,7 +545,7 @@ export default function AdminAssistantPage() {
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-bold flex items-center gap-2 leading-tight">
               <Sparkles className="h-5 w-5 text-primary shrink-0" />
-              Onwynd Admin Intelligence
+              {assistantTitle}
             </h2>
             <p className="text-xs text-muted-foreground truncate">Strategic AI co-pilot · memory-enabled</p>
           </div>
@@ -488,11 +568,17 @@ export default function AdminAssistantPage() {
             {/* Welcome / capabilities screen */}
             {isNewChat && (
               <div className="max-w-xl mx-auto pt-8 space-y-6">
+                {(roleKey === "ceo" || roleKey === "coo") && (
+                  <>
+                    <ExecutiveBrandValuation mode="panel" />
+                    <ExecutiveFinancePanel role={roleKey} />
+                  </>
+                )}
                 <div className="text-center space-y-2">
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-2">
                     <Sparkles className="h-7 w-7 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold">Onwynd Admin Intelligence</h3>
+                  <h3 className="text-xl font-bold">{assistantTitle}</h3>
                   <p className="text-sm text-muted-foreground">
                     Your AI co-pilot for platform strategy, analytics, operations, and growth.
                     Start typing to begin — I&apos;ll remember your preferences and insights over time.
@@ -513,10 +599,10 @@ export default function AdminAssistantPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    "Show me today's platform performance",
-                    "What are our top 3 growth opportunities?",
-                    "Analyse revenue trends this month",
-                    "Draft a therapist onboarding policy",
+                    "Show NGN and USD subscription revenue plus platform booking fees for today",
+                    "Break down therapist commission, payout risk, and margin impact",
+                    "Give center CAPEX, OPEX, revenue and unit economics summary",
+                    "List assets and inventory with current valuation date",
                   ].map((prompt) => (
                     <button
                       key={prompt}
@@ -593,6 +679,17 @@ export default function AdminAssistantPage() {
                       </div>
                       <p className="text-[10px] text-muted-foreground px-4 pb-2">{formatTime(msg.timestamp)}</p>
                     </div>
+                  ) : msg.eventsList ? (
+                  <div className="max-w-[80%] rounded-xl border bg-muted text-foreground px-4 py-2.5 text-sm">
+                    <p className="font-medium mb-2">{msg.content}</p>
+                    <ul className="space-y-1">
+                      {msg.eventsList.map((event, index) => (
+                        <li key={`${msg.id}-${index}`} className="text-xs">
+                          {event.time} - {event.title}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   ) : (
                   <div
                     className={`max-w-[80%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
@@ -649,7 +746,7 @@ export default function AdminAssistantPage() {
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
                   <div className="flex items-center gap-2 flex-1">
                     {fileType === 'document' && <FileText className="h-4 w-4 text-blue-500" />}
-                    {fileType === 'image' && <Image className="h-4 w-4 text-green-500" />}
+                    {fileType === 'image' && <ImageIcon className="h-4 w-4 text-green-500" />}
                     {fileType === 'audio' && <Music className="h-4 w-4 text-purple-500" />}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{selectedFile.name}</p>

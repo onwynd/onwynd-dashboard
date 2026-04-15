@@ -22,7 +22,9 @@ export function useLoadingTimeout(options: UseLoadingTimeoutOptions = {}): UseLo
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   // Keep latest options in refs so callbacks are always stable (never recreated)
   const optionsRef = useRef(options)
-  optionsRef.current = options
+  useEffect(() => {
+    optionsRef.current = options
+  }, [options])
 
   const clearTimer = () => {
     if (timerRef.current !== null) {

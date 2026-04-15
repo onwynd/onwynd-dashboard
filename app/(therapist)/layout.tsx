@@ -1,11 +1,13 @@
+
+// filepath: app/(therapist)/layout.tsx
 import type { Metadata } from "next";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { RoleGuard } from "@/components/auth/role-guard";
 import { TherapistSidebar } from "@/components/therapist-dashboard/sidebar";
-import { TherapistHeader } from "@/components/therapist-dashboard/header";
-import { TherapistHeartbeat } from "@/components/therapist-dashboard/heartbeat";
+import { DashboardHeader } from "@/components/therapist-dashboard/header";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 export const metadata: Metadata = {
-  title: { template: "%s | Onwynd", default: "Therapist Dashboard" },
+  title: { template: "%s | Onwynd Therapist", default: "Therapist Dashboard" },
 };
 
 export default function TherapistLayout({
@@ -14,16 +16,14 @@ export default function TherapistLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider className="bg-sidebar">
-      {/* Keeps is_online=true while dashboard is open; marks offline on tab close */}
-      <TherapistHeartbeat />
-      <TherapistSidebar />
-      <SidebarInset>
-        <TherapistHeader />
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {children}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <RoleGuard allowedRoles={["therapist", "admin"]}>
+        <SidebarProvider>
+            <TherapistSidebar />
+            <SidebarInset>
+                <DashboardHeader />
+                {children}
+            </SidebarInset>
+        </SidebarProvider>
+    </RoleGuard>
   );
 }

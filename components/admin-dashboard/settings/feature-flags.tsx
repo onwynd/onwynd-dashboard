@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 export function FeatureFlags() {
@@ -39,8 +39,13 @@ function FeatureFlagsInner({
     Object.entries(features).map(([k, v]) => [k, !!v])
   );
   const [formData, setFormData] = useState<Record<string, boolean>>(initialState);
-  const handleSave = () => {
-    updateSettings("features", formData);
+
+  useEffect(() => {
+    setFormData(Object.fromEntries(Object.entries(features).map(([k, v]) => [k, !!v])));
+  }, [features]);
+
+  const handleSave = async () => {
+    await updateSettings("features", formData);
   };
 
   const featuresList = [

@@ -1,12 +1,20 @@
-﻿"use client";
-
-// F1  Bank Account settings (save Paystack recipient details).
-// F4  Wire earnings to real API; "Request Payout" modal.
+"use client";
 
 import { useEffect, useState } from "react";
 import { FinancialFlowChart } from "@/components/therapist-dashboard/financial-flow-chart";
 import { therapistService } from "@/lib/api/therapist";
-import { DollarSign, TrendingUp, CreditCard, Loader2, Banknote, X, Percent, ArrowDownToLine } from "lucide-react";
+import { 
+  DollarSign, 
+  TrendingUp, 
+  CreditCard, 
+  Loader2, 
+  Banknote, 
+  X, 
+  Percent, 
+  ArrowDownToLine,
+  Calculator,
+  Info
+} from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -25,6 +33,10 @@ interface Payment {
   payer_name?: string;
   payer_email?: string;
   created_at: string;
+  session_fee?: number;
+  commission_rate?: number;
+  founding_commission_rate?: number;
+  net_amount?: number;
 }
 
 interface EarningsData {
@@ -36,7 +48,16 @@ interface EarningsData {
   commission_deducted?: number;
   net_earnings?: number;
   commission_rate?: number;
+  founding_commission_rate?: number;
+  is_founding_therapist?: boolean;
   payment_history: { data: Payment[]; meta?: { total?: number } } | Payment[];
+  commission_breakdown?: {
+    total_sessions: number;
+    total_gross: number;
+    total_commission: number;
+    founding_discount: number;
+    final_net: number;
+  };
 }
 
 interface BankAccount {
@@ -93,7 +114,7 @@ function statusVariant(status: string): "default" | "secondary" | "destructive" 
   return "outline";
 }
 
-//  Request Payout Modal 
+// Request Payout Modal
 function RequestPayoutModal({
   isOpen,
   availableBalance,
@@ -188,7 +209,7 @@ function RequestPayoutModal({
   );
 }
 
-//  Bank Account Section (F1) 
+// Bank Account Section
 function BankAccountSection() {
   const [bankAccount, setBankAccount] = useState<BankAccount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -305,7 +326,50 @@ function BankAccountSection() {
   );
 }
 
-//  Payout History 
+// Commission Breakdown Section
+function CommissionBreakdown({ breakdown }: { breakdown?: any }) {
+  if (!breakdown) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Calculator className="w-5 h-5" />
+          Commission Breakdown
+          <Info className="w-4 h-4 text-muted-foreground" />
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center py-2 border-b">
+            <span className="text-sm text-muted-foreground">Total Sessions</span>
+            <span className="font-medium">{breakdown.total_sessions}</span>
+          </div>
+          <div className="flex justify-between items-center py-2 border-b">
+            <span className="text-sm text-muted-foreground">Gross Earnings</span>
+            <span className="font-medium">{fmt(breakdown.total_gross)}</span>
+          </div>
+          <div className="flex justify-between items-center py-2 border-b">
+            <span className="text-sm text-muted-foreground">Platform Commission</span>
+            <span className="font-medium text-red-600">-{fmt(breakdown.total_commission)}</span>
+          </div>
+          {breakdown.founding_discount > 0 && (
+            <div className="flex justify-between items-center py-2 border-b">
+              <span className="text-sm text-muted-foreground">Founding Therapist Discount</span>
+              <span className="font-medium text-green-600">+{fmt(breakdown.founding_discount)}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center py-2 font-bold">
+            <span>Final Net Earnings</span>
+            <span className="text-green-600">{fmt(breakdown.final_net)}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Payout History
 function PayoutHistory() {
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -354,7 +418,7 @@ function PayoutHistory() {
   );
 }
 
-//  Page 
+// Page
 export default function EarningsPage() {
   const [data, setData] = useState<EarningsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -377,6 +441,8 @@ export default function EarningsPage() {
   const commissionDeducted = data?.commission_deducted ?? 0;
   const netEarnings = data?.net_earnings ?? totalEarnings;
   const commissionRate = data?.commission_rate ?? null;
+  const foundingCommissionRate = data?.founding_commission_rate ?? null;
+  const isFoundingTherapist = data?.is_founding_therapist ?? false;
   const payments: Payment[] = Array.isArray(data?.payment_history)
     ? (data!.payment_history as Payment[])
     : ((data?.payment_history as { data: Payment[] })?.data ?? []);
@@ -384,7 +450,10 @@ export default function EarningsPage() {
   return (
     <div className="flex-1 space-y-6 p-6 pt-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">Earnings & Finance</h2>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Earnings & Finance</h2>
+          <p className="text-muted-foreground">Track your therapy session earnings and commission breakdown</p>
+        </div>
         <Button
           onClick={() => setShowPayoutModal(true)}
           disabled={pendingPayout <= 0 && totalEarnings <= 0}
@@ -399,7 +468,7 @@ export default function EarningsPage() {
         </div>
       ) : (
         <>
-          {/* Stat Cards — DB4: Gross / Commission / Net breakdown */}
+          {/* Enhanced Stat Cards with Commission Breakdown */}
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border bg-card p-5 flex items-start gap-4">
               <div className="size-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
@@ -420,7 +489,12 @@ export default function EarningsPage() {
                 <p className="text-sm text-muted-foreground">Commission Deducted</p>
                 <p className="text-2xl font-bold">{fmt(commissionDeducted, currency)}</p>
                 {commissionRate !== null && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{commissionRate}% platform fee</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {commissionRate}% platform fee
+                    {isFoundingTherapist && foundingCommissionRate && (
+                      <span className="text-green-600 ml-1">(Founding: {foundingCommissionRate}%)</span>
+                    )}
+                  </p>
                 )}
               </div>
             </div>
@@ -466,6 +540,11 @@ export default function EarningsPage() {
             </div>
           </div>
 
+          {/* Commission Breakdown Section */}
+          {data?.commission_breakdown && (
+            <CommissionBreakdown breakdown={data.commission_breakdown} />
+          )}
+
           {/* Chart */}
           {payments.length > 0 && (
             <Card>
@@ -476,7 +555,7 @@ export default function EarningsPage() {
             </Card>
           )}
 
-          {/* F1: Bank Account Settings */}
+          {/* Bank Account Settings */}
           <BankAccountSection />
 
           {/* Payout History */}
@@ -485,7 +564,7 @@ export default function EarningsPage() {
             <CardContent><PayoutHistory /></CardContent>
           </Card>
 
-          {/* Payment History */}
+          {/* Enhanced Payment History with Commission Details */}
           <Card>
             <CardHeader><CardTitle>Payment History</CardTitle></CardHeader>
             <CardContent>
@@ -496,7 +575,9 @@ export default function EarningsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
-                      <TableHead>Amount</TableHead>
+                      <TableHead>Session Fee</TableHead>
+                      <TableHead>Commission</TableHead>
+                      <TableHead>Net Amount</TableHead>
                       <TableHead>From</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -505,7 +586,14 @@ export default function EarningsPage() {
                     {payments.map((p) => (
                       <TableRow key={p.id}>
                         <TableCell>{format(new Date(p.created_at), "dd MMM yyyy")}</TableCell>
-                        <TableCell className="font-semibold">{fmt(p.amount, p.currency)}</TableCell>
+                        <TableCell className="font-semibold">{fmt(p.session_fee || p.amount, p.currency)}</TableCell>
+                        <TableCell className="text-red-600">
+                          -{fmt((p.session_fee || p.amount) - (p.net_amount || p.amount), p.currency)}
+                          {p.commission_rate && (
+                            <span className="text-xs text-muted-foreground ml-1">({p.commission_rate}%)</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-semibold text-green-600">{fmt(p.net_amount || p.amount, p.currency)}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {p.payer_name ?? p.description ?? ""}
                         </TableCell>
@@ -522,7 +610,7 @@ export default function EarningsPage() {
         </>
       )}
 
-      {/* F4: Request Payout Modal */}
+      {/* Request Payout Modal */}
       <RequestPayoutModal
         isOpen={showPayoutModal}
         availableBalance={pendingPayout > 0 ? pendingPayout : totalEarnings}

@@ -71,12 +71,12 @@ export default function CloserDashboardPage() {
   const fetchHistory = async () => {
     setHistoryLoading(true);
     try {
-      const [won, lost] = await Promise.all([
-        salesService.getDeals({ stage: "closed_won", per_page: 50 }),
-        salesService.getDeals({ stage: "closed_lost", per_page: 50 }),
+      const [wonRes, lostRes] = await Promise.all([
+        salesService.getDeals({ status: "closed_won" }),
+        salesService.getDeals({ status: "closed_lost" }),
       ]) as any[];
-      const wonList = Array.isArray(won) ? won : (won?.data ?? []);
-      const lostList = Array.isArray(lost) ? lost : (lost?.data ?? []);
+      const wonList = Array.isArray(wonRes.data) ? wonRes.data : (wonRes.data?.data ?? []);
+      const lostList = Array.isArray(lostRes.data) ? lostRes.data : (lostRes.data?.data ?? []);
       setHistory([...wonList, ...lostList].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()));
     } catch {
       toast({ description: "Failed to load closed deals history.", variant: "destructive" });

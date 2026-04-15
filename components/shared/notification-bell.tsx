@@ -33,9 +33,16 @@ function normalizeText(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function stripHtml(value: unknown): string | null {
+  const raw = normalizeText(value);
+  if (!raw) return null;
+  const textOnly = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return textOnly.length > 0 ? textOnly : null;
+}
+
 /** Resolve display title — checks direct column first, then data JSON */
 function resolveTitle(n: Notification): string {
-  return normalizeText(n.title) ?? normalizeText(n.data?.title) ?? "Notification";
+  return normalizeText(n.title) ?? normalizeText((n as Notification & { subject?: string }).subject) ?? normalizeText(n.data?.title) ?? "Notification";
 }
 
 /** Resolve display message — checks direct column first, then body, then data JSON */
@@ -43,9 +50,9 @@ function resolveMessage(n: Notification): string | null {
   return (
     normalizeText(n.message) ??
     normalizeText(n.body) ??
+    stripHtml((n as Notification & { html?: string }).html) ??
     normalizeText(n.data?.message) ??
-    normalizeText(n.data?.body) ??
-    null
+    ""
   );
 }
 
@@ -102,7 +109,7 @@ function notifIcon(type?: string) {
 
 interface NotificationBellProps {
   /** API base path for this role, e.g. "/api/v1/admin" or "/api/v1/hr" */
-  basePath: string;
+  basePath?: string;
   /** Role-specific notifications page path, e.g. "/admin/notifications" */
   notificationsPath?: string;
 }
@@ -113,10 +120,22 @@ export function NotificationBell({ basePath, notificationsPath }: NotificationBe
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
+  useEffect(() => {
+    if (!basePath || basePath.trim().length === 0) {
+      console.warn("NotificationBell: basePath is missing or empty");
+    }
+  }, [basePath]);
+
   const fetchNotifications = useCallback(async () => {
+    if (!basePath || basePath.trim().length === 0) {
+      setLoadError("Could not load notifications");
+      return;
+    }
+
     try {
       const [listRes, countRes] = await Promise.all([
         client.get(`${basePath}/notifications`, { params: { per_page: 10 } }),
@@ -127,8 +146,9 @@ export function NotificationBell({ basePath, notificationsPath }: NotificationBe
       setNotifications(items);
       const countData = countRes.data.data ?? countRes.data;
       setUnreadCount(countData?.count ?? countData?.unread_count ?? 0);
+      setLoadError(null);
     } catch {
-      // silently fail — no network or not yet deployed
+      setLoadError("Could not load notifications");
     }
   }, [basePath]);
 
@@ -198,6 +218,10 @@ export function NotificationBell({ basePath, notificationsPath }: NotificationBe
         </div>
 
         <DropdownMenuSeparator />
+
+        {loadError && (
+          <div className="px-3 py-2 text-xs text-red-600">{loadError}</div>
+        )}
 
         {notifications.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">

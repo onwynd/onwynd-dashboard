@@ -1,129 +1,66 @@
-import client from './client';
-import { parseApiResponse } from './utils';
+
+// filepath: lib/api/sales.ts
+import client from "./client";
+import { safeApiCall } from "./safeApiCall";
+
+export interface Deal {
+  id: string;
+  name: string;
+  stage: "new" | "contacted" | "demo" | "won" | "lost";
+  value: number;
+  stale_at: string;
+  created_at: string;
+}
+
+export interface Organization {
+    id: number;
+    name: string;
+    members_count: number;
+    renewal_date: string;
+    contacts: { name: string; email: string }[];
+}
 
 export const salesService = {
-  async getStats() {
-    const response = await client.get('/api/v1/sales/stats');
-    return parseApiResponse(response);
-  },
-
-  async getRevenueFlow(period: string) {
-    const response = await client.get('/api/v1/sales/revenue-flow', { params: { period } });
-    return parseApiResponse(response);
-  },
-
-  async getLeadSources(period: string) {
-    const response = await client.get('/api/v1/sales/lead-sources', { params: { period } });
-    return parseApiResponse(response);
-  },
-
-  async getDeals(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/sales/deals', { params });
-    const data = parseApiResponse(response);
-    // Handle paginated response
-    if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    return Array.isArray(data) ? data : [];
-  },
-
-  async getLeads(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/sales/leads', { params });
-    const data = parseApiResponse(response);
-    if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    return Array.isArray(data) ? data : [];
-  },
-
-  async createLead(data: Record<string, unknown>) {
-    const response = await client.post('/api/v1/sales/leads', data);
-    return parseApiResponse(response);
-  },
-
-  async updateLead(id: number | string, data: Record<string, unknown>) {
-    const response = await client.put(`/api/v1/sales/leads/${id}`, data);
-    return parseApiResponse(response);
-  },
-
-  async deleteLead(id: number | string) {
-    const response = await client.delete(`/api/v1/sales/leads/${id}`);
-    return parseApiResponse(response);
-  },
-
-  async getContacts(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/sales/contacts', { params });
-    const data = parseApiResponse(response);
-    if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
-      return data.data;
-    }
-    return Array.isArray(data) ? data : [];
-  },
-
-  async createContact(data: Record<string, unknown>) {
-    const response = await client.post('/api/v1/sales/contacts', data);
-    return parseApiResponse(response);
-  },
-
-  async updateContact(id: number | string, data: Record<string, unknown>) {
-    const response = await client.put(`/api/v1/sales/contacts/${id}`, data);
-    return parseApiResponse(response);
-  },
-
-  async deleteContact(id: number | string) {
-    const response = await client.delete(`/api/v1/sales/contacts/${id}`);
-    return parseApiResponse(response);
-  },
-
-  async getTasks(params?: Record<string, unknown>) {
-    const response = await client.get('/api/v1/sales/tasks', { params });
-    const data = parseApiResponse(response);
-    return Array.isArray(data) ? data : [];
-  },
-
-  async createTask(data: Record<string, unknown>) {
-    const response = await client.post('/api/v1/sales/tasks', data);
-    return parseApiResponse(response);
-  },
-
-  async updateTask(id: number | string, data: Record<string, unknown>) {
-    const response = await client.put(`/api/v1/sales/tasks/${id}`, data);
-    return parseApiResponse(response);
-  },
-
-  async deleteTask(id: number | string) {
-    const response = await client.delete(`/api/v1/sales/tasks/${id}`);
-    return parseApiResponse(response);
-  },
-
-  // Closer Dashboard Methods
+  // Closer-specific endpoints
   async getCloserDashboard() {
-    const response = await client.get('/api/v1/sales/closer/dashboard');
-    return parseApiResponse(response);
+    return safeApiCall(() => client.get("/api/v1/sales/closer/dashboard"));
   },
 
-  async getReadyToClose() {
-    const response = await client.get('/api/v1/sales/closer/ready-to-close');
-    return parseApiResponse(response);
+  async getDashboard() {
+    return safeApiCall(() => client.get("/api/v1/sales/closer/dashboard"));
   },
 
-  async markDealWon(id: string | number) {
-    const response = await client.post(`/api/v1/sales/closer/deals/${id}/mark-won`);
-    return parseApiResponse(response);
+  async getDeals(params?: { status?: string }) {
+    const query =
+      params?.status === "closed_won" || params?.status === "closed_lost"
+        ? { stage: params.status }
+        : params;
+    return safeApiCall(() => client.get("/api/v1/sales/deals", { params: query }));
   },
 
-  async markDealLost(id: string | number, reason: string) {
-    const response = await client.post(`/api/v1/sales/closer/deals/${id}/mark-lost`, { lost_reason: reason });
-    return parseApiResponse(response);
+  async getClosedDeals() {
+    return safeApiCall(() =>
+      client.get("/api/v1/sales/deals", {
+        params: { stage: "closed_won,closed_lost" },
+      })
+    );
   },
 
-  // Relationship Manager (Builder) Methods
+  async markDealWon(id: string) {
+    return safeApiCall(() => client.post(`/api/v1/sales/closer/deals/${id}/mark-won`));
+  },
+
+  async markDealLost(id: string, reason: string) {
+    const normalizedReason = ["budget", "competitor", "timing", "no_decision", "other"].includes(reason)
+      ? reason
+      : "other";
+    return safeApiCall(() =>
+      client.post(`/api/v1/sales/closer/deals/${id}/mark-lost`, { lost_reason: normalizedReason })
+    );
+  },
+
+  // Builder-specific endpoints
   async getManagedOrganizations() {
-    const response = await client.get('/api/v1/institutional/organizations');
-    const data = parseApiResponse(response);
-    if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
-        return data.data;
-    }
-    return Array.isArray(data) ? data : [];
+    return safeApiCall(() => client.get("/api/v1/sales/builder/organizations"));
   },
 };

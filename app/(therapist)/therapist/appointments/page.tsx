@@ -39,14 +39,23 @@ export default function TherapistAppointmentsPage() {
             ?? (scheduledAt ? scheduledAt.toISOString().split("T")[0] : "");
           const endTime = addMinutes(startTime, duration);
           const canJoin = session.status === "scheduled" || session.status === "in_progress";
+          const statusLabel = session.status === "pending_confirmation"
+            ? "Awaiting acceptance"
+            : session.status === "scheduled"
+              ? "Scheduled"
+              : session.status === "in_progress"
+                ? "In progress"
+                : "Session";
           return {
             id: String(session.id),
-            title: `Session with ${patientName}`,
+            title: `Session with ${patientName} · ${statusLabel}`,
             date,
             startTime,
             endTime,
             participants: [patientName],
             meetingLink: canJoin ? `/therapist/sessions/${session.id}/room` : undefined,
+            status: session.status,
+            sessionUuid: session.uuid,
           };
         }).filter((e) => Boolean(e.date));
         setSessionEvents(mapped);

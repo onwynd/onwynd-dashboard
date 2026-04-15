@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 import { authService } from "@/lib/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getDashboardPathForRole } from "@/lib/auth/role-routing";
+import { parseAuthSessionState } from "@/lib/auth/session";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -45,13 +47,12 @@ export default function RegisterPage() {
 
     try {
       await authService.register(formData);
-      
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const roleSlug: string =
-        user?.role?.slug ??
-        (typeof user?.role === "string" ? user.role : formData.user_type);
-
-      router.push(getDashboardPathForRole(roleSlug));
+      const authState = parseAuthSessionState(Cookies.get("auth_state"));
+      if (!authState?.primaryRole) {
+        router.push("/login?registered=true");
+        return;
+      }
+      router.push(getDashboardPathForRole(authState.primaryRole));
     } catch (err: unknown) {
       console.error(err);
       const message =

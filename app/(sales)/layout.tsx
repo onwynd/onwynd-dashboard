@@ -1,11 +1,13 @@
+
+// filepath: app/(sales)/layout.tsx
 import type { Metadata } from "next";
+import { RoleGuard } from "@/components/auth/role-guard";
+import { SalesSidebar } from "@/components/sales-dashboard/sidebar";
 import { DashboardHeader } from "@/components/sales-dashboard/header";
-import { DashboardSidebar } from "@/components/sales-dashboard/sidebar";
-import { SalesRoleGuard } from "@/components/sales-dashboard/role-guard";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 export const metadata: Metadata = {
-  title: { template: "%s | Onwynd", default: "Sales Dashboard" },
+  title: { template: "%s | Onwynd Sales", default: "Sales Dashboard" },
 };
 
 export default function SalesLayout({
@@ -14,14 +16,16 @@ export default function SalesLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
-      <DashboardSidebar />
-      <SidebarInset>
-        <DashboardHeader />
-        <SalesRoleGuard>
-          {children}
-        </SalesRoleGuard>
-      </SidebarInset>
-    </SidebarProvider>
+    <RoleGuard allowedRoles={["sales", "closer", "finder", "builder"]}>
+        <SidebarProvider>
+            <SalesSidebar />
+            <SidebarInset>
+                <DashboardHeader />
+                <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+                    {children}
+                </div>
+            </SidebarInset>
+        </SidebarProvider>
+    </RoleGuard>
   );
 }

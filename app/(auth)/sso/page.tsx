@@ -4,7 +4,7 @@ import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import client from "@/lib/api/client";
-import { getDashboardPathForRole } from "@/lib/auth/role-routing";
+import { ROLE_DASHBOARD_PATHS } from "@/lib/auth/role-routing";
 import { syncServerSession } from "@/lib/auth/session-client";
 
 function SSOHandler() {
@@ -14,7 +14,6 @@ function SSOHandler() {
   useEffect(() => {
     const handleSSO = async () => {
       const token = searchParams.get("token");
-      const role = searchParams.get("role");
 
       if (!token) {
         console.error("No token provided for SSO");
@@ -23,30 +22,15 @@ function SSOHandler() {
       }
 
       try {
-        localStorage.setItem("auth_token", token);
-
-        const response = await client.get("/api/v1/auth/me");
-        const user = response.data.data ?? response.data;
-
-        localStorage.setItem("user", JSON.stringify(user));
-
-        const roleSlug =
-          user?.role?.slug ??
-          (typeof user?.role === "string" ? user.role : null) ??
-          role ??
-          "patient";
-
-        const allRoles = Array.isArray(user?.all_roles) && user.all_roles.length > 0
-          ? user.all_roles.filter((value: unknown): value is string => typeof value === "string" && value.length > 0)
-          : [roleSlug];
-
-        const secure = window.location.protocol === "https:";
-        const secureFlag = secure ? "; Secure" : "";
-        document.cookie = `user_role=${roleSlug}; path=/; max-age=86400; SameSite=Lax${secureFlag}`;
-        document.cookie = `user_all_roles=${encodeURIComponent(JSON.stringify(allRoles))}; path=/; max-age=86400; SameSite=Lax${secureFlag}`;
-
-        await syncServerSession(token);
-        router.push(getDashboardPathForRole(roleSlug));
+        const meResponse = await client.get("/api/v1/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const user = (meResponse.data?.data ?? meResponse.data) ?? null;
+        await syncServerSession(token, user);
+        const roleSlug = user?.primary_role ?? user?.role?.slug ?? user?.role ?? "patient";
+        router.push(ROLE_DASHBOARD_PATHS[roleSlug as keyof typeof ROLE_DASHBOARD_PATHS] ?? "/dashboard");
       } catch (error) {
         console.error("SSO Validation Failed", error);
         router.push("/login?error=invalid_token");

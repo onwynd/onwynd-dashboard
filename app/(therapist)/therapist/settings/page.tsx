@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { therapistService } from "@/lib/api/therapist";
+import { CommissionSettings, therapistService } from "@/lib/api/therapist";
 import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Save, Loader2, Upload, FileText, Bell, ChevronRight } from "lucide-react";
+import { Save, Loader2, Upload, FileText, Bell, ChevronRight, MessageCircle, Mail, Copy, Check } from "lucide-react";
 import Link from "next/link";
 
 interface ProfileForm {
@@ -46,6 +46,8 @@ export default function TherapistSettingsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [hasCertificate, setHasCertificate] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+  const [copiedInvite, setCopiedInvite] = useState(false);
+  const [commissionSettings, setCommissionSettings] = useState<CommissionSettings | null>(null);
   const certRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
@@ -67,6 +69,11 @@ export default function TherapistSettingsPage() {
         has_35min_slot: profile?.has_35min_slot ?? false,
         rate_35min: profile?.rate_35min ? String(profile.rate_35min) : "",
       });
+
+      const commission = await therapistService.getCommissionSettings();
+      if (commission?.data) {
+        setCommissionSettings(commission.data as CommissionSettings);
+      }
     } catch (error: any) {
       console.error("Profile load failed:", error);
       
@@ -114,6 +121,11 @@ export default function TherapistSettingsPage() {
       toast({ title: "Validation Error", description: "Hourly rate must be a positive number", variant: "destructive" });
       return;
     }
+
+    if (form.has_35min_slot && (!form.rate_35min || Number(form.rate_35min) <= 0)) {
+      toast({ title: "Validation Error", description: "Set a valid 35-minute session rate before saving.", variant: "destructive" });
+      return;
+    }
     
     setIsSaving(true);
     try {
@@ -125,6 +137,7 @@ export default function TherapistSettingsPage() {
         qualification: form.qualification.trim(),
         years_of_experience: form.years_of_experience,
         hourly_rate: form.hourly_rate,
+        is_accepting_clients: form.is_accepting_clients,
         has_35min_slot: form.has_35min_slot,
         rate_35min: form.has_35min_slot && form.rate_35min ? Number(form.rate_35min) : null,
       });
@@ -198,6 +211,39 @@ export default function TherapistSettingsPage() {
 
   const setField = (field: keyof ProfileForm, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  const therapistName = form.full_name?.trim() || "a therapist on Onwynd";
+  const inviteMessage = `Hi, I would like to refer you to join Onwynd as a therapist. It is a strong platform for mental health practice growth, secure client management, and verified professional visibility. You can sign up here: https://app.onwynd.com/therapist-signup`;
+  const inviteSubject = "Therapist Referral: Join Onwynd";
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(`${inviteMessage}\n\nReferred by: ${therapistName}`)}`;
+  const emailHref = `mailto:?subject=${encodeURIComponent(inviteSubject)}&body=${encodeURIComponent(`${inviteMessage}\n\nReferred by: ${therapistName}`)}`;
+
+  const handleCopyInvite = async () => {
+    try {
+      await navigator.clipboard.writeText(`${inviteMessage}\n\nReferred by: ${therapistName}`);
+      setCopiedInvite(true);
+      setTimeout(() => setCopiedInvite(false), 2000);
+    } catch {
+      toast({ title: "Copy failed", description: "Please copy manually from the email or WhatsApp draft.", variant: "destructive" });
+    }
+  };
+
+  const resolveCommissionTier = (rate: number) => {
+    const tiersSource = commissionSettings?.tiers;
+    if (!tiersSource) return { keepPercent: 85, label: "Standard tier", foundingBonus: 3 };
+
+    const normalizedTiers = Array.isArray(tiersSource)
+      ? tiersSource
+      : ((tiersSource.NGN ?? Object.values(tiersSource)[0]) as Array<{ min: number; max: number | null; therapist_keep_percent: number; label?: string }>);
+
+    const matched =
+      normalizedTiers.find((tier) => rate >= Number(tier.min) && (tier.max === null || rate <= Number(tier.max))) ??
+      normalizedTiers[normalizedTiers.length - 1];
+
+    const keepPercent = Number(matched?.therapist_keep_percent ?? 85);
+    const foundingBonus = Number(commissionSettings?.founding_discount_percent ?? 3);
+    return { keepPercent, label: matched?.label ?? "Current tier", foundingBonus };
+  };
 
   if (isLoading) {
     return (
@@ -321,32 +367,40 @@ export default function TherapistSettingsPage() {
                   </p>
                 </div>
 
-                {form.rate_35min && Number(form.rate_35min) > 0 && (
+                {form.rate_35min && Number(form.rate_35min) > 0 && (() => {
+                  const rateValue = Number(form.rate_35min);
+                  const tier = resolveCommissionTier(rateValue);
+                  const standardCommissionRate = Math.max(0, 100 - tier.keepPercent);
+                  const standardNet = Math.round(rateValue * (tier.keepPercent / 100));
+                  const foundingKeepPercent = Math.min(100, tier.keepPercent + tier.foundingBonus);
+                  const foundingNet = Math.round(rateValue * (foundingKeepPercent / 100));
+                  return (
                   <div className="rounded-md border bg-background p-3 text-sm space-y-1">
                     <p className="font-semibold text-xs text-muted-foreground uppercase tracking-wide">
-                      Indicative Earnings per Session
+                      Indicative Earnings per Session ({tier.label})
                     </p>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Your rate</span>
                       <span className="font-medium">
-                        ₦{Number(form.rate_35min).toLocaleString()}
+                        ₦{rateValue.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
-                      <span>Platform commission (15%)</span>
-                      <span>− ₦{Math.round(Number(form.rate_35min) * 0.15).toLocaleString()}</span>
+                      <span>Platform commission ({standardCommissionRate.toFixed(1)}%)</span>
+                      <span>− ₦{Math.round(rateValue * (standardCommissionRate / 100)).toLocaleString()}</span>
                     </div>
                     <Separator className="my-1" />
                     <div className="flex justify-between font-bold text-emerald-600">
                       <span>You keep</span>
-                      <span>₦{Math.round(Number(form.rate_35min) * 0.85).toLocaleString()}</span>
+                      <span>₦{standardNet.toLocaleString()}</span>
                     </div>
                     <p className="text-xs text-muted-foreground pt-1">
-                      Founding therapists retain 88% instead of 85%. Your exact rate depends on
+                      Founding therapists retain {foundingKeepPercent.toFixed(1)}% instead of {tier.keepPercent.toFixed(1)}% (₦{foundingNet.toLocaleString()} net). Your exact rate depends on
                       your agreement with Onwynd.
                     </p>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             )}
           </CardContent>
@@ -395,6 +449,43 @@ export default function TherapistSettingsPage() {
             </CardContent>
           </Card>
         </Link>
+
+        {/* Therapist referral */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Refer a Therapist</CardTitle>
+            <CardDescription>
+              Invite other therapists to join Onwynd via WhatsApp or email with a smart prefilled message.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+              Referrals include your name automatically so the invite feels personal and trusted.
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
+              >
+                <MessageCircle className="size-4 text-green-600" />
+                Share on WhatsApp
+              </a>
+              <a
+                href={emailHref}
+                className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
+              >
+                <Mail className="size-4" />
+                Share via Email
+              </a>
+              <Button type="button" variant="outline" onClick={handleCopyInvite} className="gap-2">
+                {copiedInvite ? <Check className="size-4" /> : <Copy className="size-4" />}
+                {copiedInvite ? "Copied" : "Copy Invite Text"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Availability preferences */}
         <Card>

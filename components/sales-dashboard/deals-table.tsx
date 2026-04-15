@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { useSalesStore } from "@/store/sales-store";
 import { downloadCSV } from "@/lib/export-utils";
+import { PermissionGate } from "@/components/shared/PermissionGate";
 
 const stages = ["Negotiation", "Proposal Sent", "Qualified", "Discovery"];
 const owners = ["Alex Ray", "Mina Swan", "John Kim", "Sarah Lee"];
@@ -402,23 +403,31 @@ export function DealsTable() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="size-4 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Pencil className="size-4 mr-2" />
-                          Edit Deal
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Copy className="size-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
+                        <PermissionGate resource="deals" permission="read">
+                          <DropdownMenuItem>
+                            <Eye className="size-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                        </PermissionGate>
+                        <PermissionGate resource="deals" permission="update">
+                          <DropdownMenuItem>
+                            <Pencil className="size-4 mr-2" />
+                            Edit Deal
+                          </DropdownMenuItem>
+                        </PermissionGate>
+                        <PermissionGate resource="deals" permission="write">
+                          <DropdownMenuItem>
+                            <Copy className="size-4 mr-2" />
+                            Duplicate
+                          </DropdownMenuItem>
+                        </PermissionGate>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="size-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
+                        <PermissionGate resource="deals" permission="delete">
+                          <DropdownMenuItem className="text-destructive">
+                            <Trash2 className="size-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </PermissionGate>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

@@ -192,21 +192,42 @@ export const useSupportChatStore = create<SupportChatState>((set, get) => ({
     echo
       .private(`support.chat.${uuid}`)
       .listen('.support.message', (e: unknown) => {
-        const { message } = e as { message: ChatMessage };
+        const payload = e as Record<string, unknown>;
+        const parsedMessage: ChatMessage | null =
+          typeof payload.id === 'number' &&
+          typeof payload.sender_type === 'string' &&
+          typeof payload.message === 'string' &&
+          typeof payload.created_at === 'string'
+            ? {
+                id: payload.id,
+                sender_type: payload.sender_type as ChatMessage['sender_type'],
+                sender_id: typeof payload.sender_id === 'number' ? payload.sender_id : null,
+                message: payload.message,
+                metadata: (payload.metadata ?? null) as Record<string, unknown> | null,
+                is_read: Boolean(payload.is_read ?? false),
+                created_at: payload.created_at,
+              }
+            : null;
+
+        if (!parsedMessage) {
+          console.warn('[support-chat-store] Unexpected support.message payload shape', payload);
+          return;
+        }
+
         // Append incoming message (deduplicate by id)
         set((s) => {
           const isCustomerView = s.activeChatUuid === uuid;
           const isAgentView = s.selectedChatUuid === uuid;
 
           if (isCustomerView) {
-            const exists = s.messages.some((m) => m.id === message.id);
+            const exists = s.messages.some((m) => m.id === parsedMessage.id);
             if (exists) return {};
-            return { messages: [...s.messages, message] };
+            return { messages: [...s.messages, parsedMessage] };
           }
           if (isAgentView) {
-            const exists = s.selectedMessages.some((m) => m.id === message.id);
+            const exists = s.selectedMessages.some((m) => m.id === parsedMessage.id);
             if (exists) return {};
-            return { selectedMessages: [...s.selectedMessages, message] };
+            return { selectedMessages: [...s.selectedMessages, parsedMessage] };
           }
           return {};
         });

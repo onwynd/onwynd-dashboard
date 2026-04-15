@@ -44,6 +44,7 @@ const TARGET_LABELS: Record<string, string> = {
 };
 
 export default function NotificationsPage() {
+  const broadcastEnabled = true;
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -85,17 +86,24 @@ export default function NotificationsPage() {
 
     setSubmitting(true);
     try {
-      await client.post("/api/v1/marketing/broadcast/send", {
-        subject: formData.title,
-        html: formData.message,
+      await client.post("/api/v1/admin/notifications/broadcast", {
+        channel: formData.channel,
+        target_type: formData.target_type,
+        title: formData.title,
+        message: formData.message,
         audience: [formData.target_type],
       });
       toast.success("Broadcast notification sent successfully");
       setFormData({ title: "", message: "", target_type: "all_patients", channel: "push" });
       fetchNotifications();
     } catch (error) {
-      console.error("Failed to send broadcast", error);
-      toast.error("Failed to send broadcast notification");
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 404 || status === 405) {
+        console.warn("Admin notification broadcast endpoint is not available yet.");
+        toast.error("Broadcast is coming soon.");
+      } else {
+        toast.error("Failed to send broadcast notification");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -200,7 +208,8 @@ export default function NotificationsPage() {
             <Button
               className="w-full gap-2 bg-teal text-white hover:bg-teal-mid"
               onClick={handleSendBroadcast}
-              disabled={submitting}
+              disabled={submitting || !broadcastEnabled}
+              title={broadcastEnabled ? "Send broadcast notification" : "Coming soon"}
             >
               <Send className="w-4 h-4" />
               {submitting ? "Sending..." : "Launch Campaign"}

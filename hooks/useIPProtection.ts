@@ -16,16 +16,13 @@ interface DashboardIPConfig {
 const logAttempt = async (type: string, path: string, enabled: boolean) => {
   if (!enabled) return;
   try {
-    const token = localStorage.getItem('onwynd_token') ||
-                  document.cookie.match(/onwynd_token=([^;]+)/)?.[1];
-    
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
     
     await fetch(`${apiUrl}/v1/config/ip-protection/log`, {
       method: 'POST',
+      credentials: "include",
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ platform: 'dashboard', attempt_type: type, page_path: path }),
       keepalive: true,
@@ -112,7 +109,8 @@ export function useDashboardIPProtection(config: DashboardIPConfig | null) {
     }
 
     // ── DevTools detection ─────────────────────────────────────────────
-    if (config.ip_protect_dash_devtools) {
+    // Only active in production — dev builds always have devtools open
+    if (config.ip_protect_dash_devtools && process.env.NODE_ENV === 'production') {
       let open = false;
       const THRESHOLD = 160;
 

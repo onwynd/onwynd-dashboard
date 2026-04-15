@@ -115,8 +115,6 @@ export const useInstitutionalStore = create<InstitutionalDashboardState>((set, g
       if (axiosErr?.response?.status === 402) {
         const code = axiosErr.response?.data?.code ?? "SUBSCRIPTION_EXPIRED";
         set({ paywallCode: code });
-      } else {
-        console.error("Failed to fetch institutional stats:", error);
       }
     }
   },
@@ -125,8 +123,8 @@ export const useInstitutionalStore = create<InstitutionalDashboardState>((set, g
     try {
       const data = await institutionalService.getMetrics();
       set({ metrics: data });
-    } catch (error) {
-      console.error("Failed to fetch institutional metrics:", error);
+    } catch {
+      // silent
     }
   },
 
@@ -135,8 +133,7 @@ export const useInstitutionalStore = create<InstitutionalDashboardState>((set, g
       const response = await institutionalService.getReferrals(params);
       const data = parseApiResponse(response);
       set({ referrals: Array.isArray(data) ? data : [] });
-    } catch (error) {
-      console.error("Failed to fetch referrals:", error);
+    } catch {
       set({ referrals: [] });
     }
   },
@@ -146,8 +143,7 @@ export const useInstitutionalStore = create<InstitutionalDashboardState>((set, g
       const response = await institutionalService.getRecentDocuments(params);
       const data = parseApiResponse(response);
       set({ documents: Array.isArray(data) ? data : [] });
-    } catch (error) {
-      console.error("Failed to fetch documents:", error);
+    } catch {
       set({ documents: [] });
     }
   },
@@ -157,8 +153,7 @@ export const useInstitutionalStore = create<InstitutionalDashboardState>((set, g
       const response = await institutionalService.getMembers(organizationId, params);
       const data = parseApiResponse(response);
       set({ members: Array.isArray(data) ? data : [] });
-    } catch (error) {
-      console.error("Failed to fetch members:", error);
+    } catch {
       set({ members: [] });
     }
   },
@@ -168,8 +163,7 @@ export const useInstitutionalStore = create<InstitutionalDashboardState>((set, g
       const response = await institutionalService.getPlans();
       const data = parseApiResponse(response);
       set({ plans: Array.isArray(data) ? data : [] });
-    } catch (error) {
-      console.error("Failed to fetch plans:", error);
+    } catch {
       set({ plans: [] });
     }
   },
@@ -197,7 +191,6 @@ export const useInstitutionalStore = create<InstitutionalDashboardState>((set, g
         referrals: [newReferral as Referral, ...state.referrals]
       }));
     } catch (error) {
-      console.error("Failed to create referral:", error);
       throw error;
     }
   },
@@ -207,7 +200,6 @@ export const useInstitutionalStore = create<InstitutionalDashboardState>((set, g
       const newDoc = await institutionalService.uploadDocument(file);
       set((state) => ({ documents: [newDoc as Document, ...state.documents] }));
     } catch (error) {
-      console.error("Failed to upload document:", error);
       throw error;
     }
   },
@@ -219,7 +211,6 @@ export const useInstitutionalStore = create<InstitutionalDashboardState>((set, g
         documents: state.documents.filter((d) => d.id !== id),
       }));
     } catch (error) {
-      console.error("Failed to delete document:", error);
       throw error;
     }
   },

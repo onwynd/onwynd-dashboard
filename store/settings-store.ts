@@ -97,9 +97,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   updateSettings: async (section, data) => {
     set({ isLoading: true });
     try {
-      await settingsService.updateSettings(section, data);
+      const updatedSection = await settingsService.updateSettings(section, data);
       set((state) => ({
-        settings: state.settings ? { ...state.settings, [section]: data } : null
+        settings: state.settings
+          ? { ...state.settings, [section]: (updatedSection ?? data) as AppSettings[typeof section] }
+          : null
       }));
       toast({ title: "Settings Updated", description: `${section} settings have been saved.` });
     } catch (error) {

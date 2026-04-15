@@ -61,6 +61,8 @@ import { settingsService } from "@/lib/api/settings";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
+import { adminService } from "@/lib/api/admin";
+
 const menuItems = [
   {
     title: "Overview",
@@ -77,7 +79,7 @@ const menuItems = [
     title: "User Management",
     items: [
       { title: "Users",                  icon: Users,       href: "/admin/users" },
-      { title: "Therapists",             icon: UserCheck,   href: "/admin/therapists" },
+      { title: "Therapists",             icon: UserCheck,   href: "/admin/therapists", badge: "pendingTherapists" },
       { title: "Sessions",               icon: Activity,    href: "/admin/sessions" },
       { title: "Approvals",              icon: CheckSquare, href: "/admin/approvals/subscription-upgrades" },
       { title: "Student Verifications",  icon: School,      href: "/admin/student-verifications" },
@@ -141,13 +143,18 @@ export function DashboardSidebar({ ...props }: React.ComponentProps<typeof Sideb
   const pathname = usePathname();
   const role = typeof window !== "undefined" ? Cookies.get("user_role") : undefined;
   const [disabledRoutes, setDisabledRoutes] = useState<Record<string, string[]>>({});
+  const [counts, setCounts] = useState({ pendingTherapists: 0 });
 
   React.useEffect(() => {
     (async () => {
       try {
-        const s = await settingsService.getSettings();
+        const [s, c] = await Promise.all([
+          settingsService.getSettings(),
+          adminService.getTherapistCounts(),
+        ]);
         const nav = s?.navigation?.disabled_routes;
         if (nav && typeof nav === "object") setDisabledRoutes(nav as Record<string, string[]>);
+        if (c) setCounts(c as { pendingTherapists: 0 });
       } catch {
         setDisabledRoutes({});
       }
@@ -201,25 +208,33 @@ export function DashboardSidebar({ ...props }: React.ComponentProps<typeof Sideb
             <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={`${item.href}:${item.title}`}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive(item.href)}
-                      tooltip={item.title}
-                      className={cn(
-                        isActive(item.href)
-                          ? "bg-teal/10 text-teal border-l-2 border-teal font-medium"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                      )}
-                    >
-                      <Link href={item.href}>
-                        <item.icon className="size-4 shrink-0" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {group.items.map((item) => {
+                  const badgeCount = item.badge === 'pendingTherapists' ? counts.pendingTherapists : 0;
+                  return (
+                    <SidebarMenuItem key={`${item.href}:${item.title}`}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive(item.href)}
+                        tooltip={item.title}
+                        className={cn(
+                          isActive(item.href)
+                            ? "bg-teal/10 text-teal border-l-2 border-teal font-medium"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        )}
+                      >
+                        <Link href={item.href}>
+                          <item.icon className="size-4 shrink-0" />
+                          <span>{item.title}</span>
+                          {badgeCount > 0 && (
+                            <span className="ml-auto bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                              {badgeCount}
+                            </span>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
