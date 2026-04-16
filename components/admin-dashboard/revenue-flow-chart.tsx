@@ -137,7 +137,10 @@ export function RevenueFlowChart() {
     }
   }
 
-  const chartData = getDataForPeriod(period) as RevenuePoint[];
+  const chartData: RevenuePoint[] = getDataForPeriod(period).map((entry) => ({
+    name: (entry as any).name ?? (entry as any).month ?? "",
+    value: (entry as any).value ?? (entry as any).revenue ?? 0,
+  }));
   
   // Check for empty data
   if (!chartData || chartData.length === 0) {

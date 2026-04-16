@@ -100,7 +100,7 @@ export default function ClinicalSessionAuditsPage() {
     <div className="space-y-6 p-4 md:p-8 pt-6">
       <PageHeader
         title="AI Session Audits"
-        description="Review AI-generated session audit reports to ensure quality and compliance"
+        subtitle="Review AI-generated session audit reports to ensure quality and compliance"
       />
 
       {unavailable && (

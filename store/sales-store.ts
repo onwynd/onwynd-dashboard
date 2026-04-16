@@ -130,55 +130,49 @@ export const useSalesStore = create<SalesState>((set) => ({
 
   fetchStats: async () => {
     try {
-      const data = await salesService.getStats();
-      set({ stats: data as StatCard[] || undefined });
-    } catch {
-      // silent
-    }
+      const res = await salesService.getStats();
+      const d = (res as any)?.data ?? res;
+      set({ stats: (Array.isArray(d) ? d : []) as StatCard[] });
+    } catch { /* silent */ }
   },
 
   fetchRevenueFlow: async (period) => {
     try {
-      const data = await salesService.getRevenueFlow(period);
-      set({ revenueFlow: data as RevenueFlow[] || undefined });
-    } catch {
-      // silent
-    }
+      const res = await salesService.getRevenueFlow(period);
+      const d = (res as any)?.data ?? res;
+      set({ revenueFlow: (Array.isArray(d) ? d : []) as RevenueFlow[] });
+    } catch { /* silent */ }
   },
 
   fetchLeadSources: async (period) => {
     try {
-      const data = await salesService.getLeadSources(period);
-      set({ leadSources: data as LeadSource[] || undefined });
-    } catch {
-      // silent
-    }
+      const res = await salesService.getLeadSources(period);
+      const d = (res as any)?.data ?? res;
+      set({ leadSources: (Array.isArray(d) ? d : []) as LeadSource[] });
+    } catch { /* silent */ }
   },
 
   fetchDeals: async (params) => {
     try {
-      const data = await salesService.getDeals(params);
-      set({ deals: data as Deal[] || undefined });
-    } catch {
-      // silent
-    }
+      const res = await salesService.getDeals(params);
+      const d = (res as any)?.data ?? res;
+      set({ deals: (Array.isArray(d) ? d : []) as Deal[] });
+    } catch { /* silent */ }
   },
 
   fetchLeads: async (params) => {
     try {
-      const data = await salesService.getLeads(params);
-      set({ leads: data });
-    } catch {
-      // silent
-    }
+      const res = await salesService.getLeads(params);
+      const d = (res as any)?.data ?? res;
+      set({ leads: (Array.isArray(d) ? d : []) as SalesLead[] });
+    } catch { /* silent */ }
   },
 
   fetchTasks: async (params) => {
     try {
-      const data = await salesService.getTasks(params);
-      set({ tasks: data });
-    } catch {
-      // silent
-    }
+      const res = await salesService.getTasks(params);
+      const d = (res as any)?.data ?? res;
+      set({ tasks: (Array.isArray(d) ? d : []) as SalesTask[] });
+    } catch { /* silent */ }
   },
 }));

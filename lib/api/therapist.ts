@@ -37,6 +37,7 @@ export interface Patient {
     profile_photo?: string | null;
     status?: string | null;
     is_active?: boolean;
+    department?: string | null;
     created_at: string;
 }
 

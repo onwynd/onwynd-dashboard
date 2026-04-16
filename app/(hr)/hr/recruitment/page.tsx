@@ -77,8 +77,9 @@ export default function HRRecruitmentPage() {
   const fetchApplications = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await hrService.getJobApplications();
-      const list = Array.isArray(data) ? data : (data as { data?: Application[] })?.data ?? [];
+      const res = await hrService.getJobApplications();
+      const data = (res as any)?.data ?? res;
+      const list = Array.isArray(data) ? data : (data as any)?.data ?? [];
       setApplications(Array.isArray(list) ? list : []);
     } catch {
       toast({ description: "Failed to load applications", variant: "destructive" });

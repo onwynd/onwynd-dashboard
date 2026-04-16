@@ -188,7 +188,8 @@ export default function TherapistProfilePage() {
 
   const load = async () => {
     try {
-      const data = await therapistService.getProfile();
+      const res = await therapistService.getProfile();
+      const data = (res as any)?.data ?? res;
       setProfile(data as Profile | null);
     } catch (error: any) {
       console.error("Profile load failed:", error);

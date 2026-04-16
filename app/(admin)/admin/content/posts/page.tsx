@@ -135,12 +135,13 @@ export default function EditorialPostsPage() {
       const params: Record<string, unknown> = {};
       if (statusFilter !== "all") params.status = statusFilter;
       if (search.trim()) params.search = search.trim();
-      const data = await adminService.getEditorialPosts(params);
+      const res = await adminService.getEditorialPosts(params);
+      const data = (res as any)?.data ?? res;
       // API returns a Laravel paginator: { current_page, data: [...], total, ... }
       const list: EditorialPost[] = Array.isArray(data)
         ? data
-        : Array.isArray((data as { data?: EditorialPost[] })?.data)
-          ? (data as { data: EditorialPost[] }).data
+        : Array.isArray((data as any)?.data)
+          ? (data as any).data
           : [];
       setPosts(list);
     } catch {
@@ -289,10 +290,11 @@ export default function EditorialPostsPage() {
     // Edit mode: upload immediately
     setIsUploadingImage(true);
     try {
-      const result = await adminService.uploadEditorialPostImage(editingPost.id, file);
+      const res = await adminService.uploadEditorialPostImage(editingPost.id, file);
+      const result = (res as any)?.data ?? res;
       const imageUrl = typeof result === 'object' && result !== null && 'featured_image' in result
-        ? (result as { featured_image: string }).featured_image
-        : (result as string);
+        ? (result as unknown as { featured_image: string }).featured_image
+        : String(result ?? '');
       setForm((prev) => ({ ...prev, featured_image: imageUrl }));
       toast({ title: "Image uploaded", description: "Featured image updated successfully." });
     } catch {

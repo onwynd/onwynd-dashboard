@@ -6,9 +6,14 @@ import { toast } from "@/components/ui/use-toast";
 
 // Define interfaces for the data models
 export interface AdminStat {
+  id?: string;
   title: string;
   value: string;
-  subtitle: string;
+  subtitle?: string;
+  change?: string;
+  changeValue?: string;
+  isPositive?: boolean;
+  icon?: string;
   iconName?: string;
 }
 
@@ -37,12 +42,40 @@ export interface QuotaOverview {
     };
 }
 
+export interface LeadSource {
+  name: string;
+  value: number;
+}
+
+export interface QuotaAnalyticsEntry {
+  date?: string;
+  active_users: number;
+  ai_messages_sent: number;
+  activities_logged: number;
+  quota_overages: number;
+}
+
+export interface QuotaOverageEntry {
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  feature: string;
+  usage: number;
+  limit: number;
+  overage: number;
+  last_occurrence: string;
+}
+
 interface AdminState {
   stats: AdminStat[];
   revenueFlow: RevenueFlowEntry[];
   deals: Deal[];
   activeUsers: ActiveUser[];
   quotaOverview: QuotaOverview | null;
+  leadSources: LeadSource[];
+  quotaAnalytics: QuotaAnalyticsEntry[];
+  quotaOverages: QuotaOverageEntry[];
+  isLoading: boolean;
   loadingStats: boolean;
   loadingRevenue: boolean;
   loadingDeals: boolean;
@@ -55,6 +88,8 @@ interface AdminState {
   fetchDeals: () => Promise<void>;
   fetchActiveUsers: () => Promise<void>;
   fetchQuotaOverview: () => Promise<void>;
+  fetchQuotaAnalytics: (period?: string) => Promise<void>;
+  fetchQuotaOverages: (params?: Record<string, unknown>) => Promise<void>;
 }
 
 export const useAdminStore = create<AdminState>((set) => ({
@@ -63,6 +98,10 @@ export const useAdminStore = create<AdminState>((set) => ({
   deals: [],
   activeUsers: [],
   quotaOverview: null,
+  leadSources: [],
+  quotaAnalytics: [],
+  quotaOverages: [],
+  isLoading: false,
   loadingStats: true,
   loadingRevenue: true,
   loadingDeals: true,
@@ -123,5 +162,18 @@ export const useAdminStore = create<AdminState>((set) => ({
       set({ loadingQuota: false, error: error });
       toast({ title: "Error", description: "Failed to load quota overview.", variant: "destructive" });
     }
+  },
+
+  fetchQuotaAnalytics: async (period) => {
+    set({ isLoading: true });
+    const { data } = await adminService.getQuotaAnalytics(period);
+    const list = Array.isArray(data) ? data : (data?.data ?? []);
+    set({ quotaAnalytics: list, isLoading: false });
+  },
+
+  fetchQuotaOverages: async (params) => {
+    const { data } = await adminService.getQuotaOverages(params);
+    const list = Array.isArray(data) ? data : (data?.data ?? []);
+    set({ quotaOverages: list });
   },
 }));

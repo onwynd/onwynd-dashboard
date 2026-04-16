@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { getEcho } from "@/lib/echo";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Loader2, Minus, Plus } from "lucide-react";
@@ -56,7 +56,7 @@ interface AvailableTherapist {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function CreateGroupSessionPage() {
+function CreateGroupSessionPageContent() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -118,7 +118,7 @@ export default function CreateGroupSessionPage() {
   // Auto-skip step 1 if preset type is individual-compatible
   useEffect(() => {
     if (presetType && !isOrgAdmin && !organiserType) {
-      if (INDIVIDUAL_MODES.includes(presetType)) {
+      if (INDIVIDUAL_MODES.some((m) => m.id === presetType)) {
         setOrganiserType("individual");
         setMode(presetType);
         setStep(3);
@@ -278,9 +278,9 @@ export default function CreateGroupSessionPage() {
   }
 
   const visibleModes = SESSION_MODES.filter((m) => {
-    if (organiserType === "individual") return INDIVIDUAL_MODES.includes(m.id);
+    if (organiserType === "individual") return INDIVIDUAL_MODES.some((im) => im.id === m.id);
     if (organiserType === "internal_org" || organiserType === "external_org")
-      return ORG_MODES.includes(m.id);
+      return ORG_MODES.some((om) => om.id === m.id);
     return true;
   });
 
@@ -729,5 +729,14 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium text-foreground text-right">{value}</span>
     </div>
+  );
+}
+
+
+export default function CreateGroupSessionPage() {
+  return (
+    <Suspense>
+      <CreateGroupSessionPageContent />
+    </Suspense>
   );
 }

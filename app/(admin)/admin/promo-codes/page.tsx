@@ -118,7 +118,7 @@ function StatsPanel({ uuid }: { uuid: string }) {
     setError(false);
     adminService
       .getPromoCodeStats(uuid)
-      .then((data) => setStats(data ?? null))
+      .then((res) => setStats(((res as any)?.data ?? res) as unknown as PromoStats ?? null))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [uuid]);

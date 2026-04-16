@@ -98,6 +98,7 @@ export interface GroupSession {
   is_org_covered?: boolean;
   language?: string;
   topic_tags?: string[];
+  duration_minutes?: number;
   scheduled_at: string;
   confirmed_at?: string;
   cancelled_at?: string;

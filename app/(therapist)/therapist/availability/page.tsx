@@ -94,7 +94,7 @@ export default function AvailabilityPage() {
         payload.specific_date = formSpecificDate;
       }
       const created = await therapistService.createAvailability(payload);
-      setSlots((prev) => [...prev, created as AvailabilitySlot]);
+      setSlots((prev) => [...prev, (created as any)?.data ?? created as unknown as AvailabilitySlot]);
       setDialogOpen(false);
       toast.success("Availability slot added");
     } catch {

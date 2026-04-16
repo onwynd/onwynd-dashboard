@@ -14,7 +14,8 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default (withPWA as any)({
   dest: "public",
   register: true,
   skipWaiting: true,

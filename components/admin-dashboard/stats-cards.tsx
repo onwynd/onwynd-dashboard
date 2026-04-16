@@ -52,8 +52,9 @@ export function StatsCards() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((stat) => {
-        const Icon = ICON_MAP[stat.icon] ?? Coins;
-        const colour = COLOUR_MAP[stat.icon] ?? "teal";
+        const iconKey = stat.icon ?? stat.iconName ?? "";
+        const Icon = ICON_MAP[iconKey] ?? Coins;
+        const colour = COLOUR_MAP[iconKey] ?? "teal";
 
         // Parse trend from stat.change string (e.g. "↑ 12%" or "12%")
         let trend: number | undefined;

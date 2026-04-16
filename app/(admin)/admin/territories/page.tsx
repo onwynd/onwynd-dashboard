@@ -155,11 +155,13 @@ export default function TerritoriesPage() {
         description: form.description || null,
       };
       if (editTarget) {
-        const updated = await adminService.updateTerritory(editTarget.id, payload);
+        const res = await adminService.updateTerritory(editTarget.id, payload);
+        const updated = ((res as any)?.data ?? res) as unknown as Territory;
         setTerritories((prev) => prev.map((t) => t.id === updated.id ? updated : t));
         toast({ description: "Territory updated." });
       } else {
-        const created = await adminService.createTerritory(payload);
+        const res = await adminService.createTerritory(payload);
+        const created = ((res as any)?.data ?? res) as unknown as Territory;
         setTerritories((prev) => [created, ...prev]);
         toast({ description: "Territory created." });
       }
@@ -189,8 +191,8 @@ export default function TerritoriesPage() {
     setAssignRole("sales_rep");
     setAssignPrimary(false);
     try {
-      const detail = await adminService.getTerritoryDetail(t.id);
-      setSheetTerritory(detail);
+      const res = await adminService.getTerritoryDetail(t.id);
+      setSheetTerritory(((res as any)?.data ?? res) as unknown as Territory);
     } catch {
       setSheetTerritory(t);
     } finally {
@@ -205,7 +207,8 @@ export default function TerritoriesPage() {
       await adminService.assignAgentsToTerritory(agentSheet.id, [
         { user_id: Number(assignUserId), role: assignRole, is_primary: assignPrimary },
       ]);
-      const updated = await adminService.getTerritoryDetail(agentSheet.id);
+      const res2 = await adminService.getTerritoryDetail(agentSheet.id);
+      const updated = ((res2 as any)?.data ?? res2) as unknown as Territory;
       setSheetTerritory(updated);
       setTerritories((prev) => prev.map((t) => t.id === updated.id ? updated : t));
       toast({ description: "Agent assigned." });

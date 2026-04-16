@@ -317,8 +317,8 @@ export default function AdminAnalyticsPage() {
         adminService.getAnalyticsReports(params),
         adminService.getUserGrowthAnalytics(params),
       ]);
-      if (fin.status === "fulfilled") setFinancialData(fin.value);
-      if (growth.status === "fulfilled") setGrowthData(growth.value);
+      if (fin.status === "fulfilled") setFinancialData(((fin.value as unknown) as { data: FinancialReport | null }).data);
+      if (growth.status === "fulfilled") setGrowthData(((growth.value as unknown) as { data: UserGrowthReport | null }).data);
     } catch {
       toast({ title: "Error", description: "Failed to load analytics", variant: "destructive" });
     } finally {

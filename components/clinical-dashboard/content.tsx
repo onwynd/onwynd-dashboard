@@ -229,7 +229,7 @@ export function DashboardContent() {
       {activeView === 'clinical' ? (
         <div className="space-y-6">
           <AlertBanner />
-          {loadingStats ? <StatsSkeleton /> : <StatsCards stats={stats} />}
+          {loadingStats ? <StatsSkeleton /> : <StatsCards />}
 
           {loadingQueue ? (
             <DistressQueueSkeleton />

@@ -170,3 +170,11 @@ export function getAllowedPrefixesForRole(role: string | null | undefined): stri
   const canonicalRole = normalizeRole(role);
   return canonicalRole ? ROLE_ALLOWED_PREFIXES[canonicalRole] ?? [] : [];
 }
+
+export function getApiPrefixForRole(role: string | null | undefined): string {
+  const canonicalRole = normalizeRole(role);
+  if (!canonicalRole) return '/patient';
+  const dashboardPath = ROLE_DASHBOARD_PATHS[canonicalRole];
+  // e.g. "/therapist/dashboard" → "/therapist"
+  return dashboardPath.replace('/dashboard', '') || '/patient';
+}

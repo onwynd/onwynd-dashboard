@@ -36,9 +36,10 @@ export default function SupportSettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const settings = await adminService.getSettings();
-        if (settings.support) {
-          form.reset(settings.support);
+        const res = await adminService.getSettings();
+        const settings = (res as any)?.data ?? res;
+        if ((settings as any)?.support) {
+          form.reset((settings as any).support);
         }
       } catch (error) {
         toast({

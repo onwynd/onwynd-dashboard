@@ -46,8 +46,9 @@ export default function LandingPageContentPage() {
   const fetchContent = async () => {
     try {
       setLoading(true);
-      const data = await adminService.getLandingPageContent();
-      setContent(typeof data === 'object' && data !== null ? data as Record<string, LandingPageContent[]> : {});
+      const res = await adminService.getLandingPageContent();
+      const data = (res as any)?.data ?? res;
+      setContent(typeof data === 'object' && data !== null ? data as unknown as Record<string, LandingPageContent[]> : {});
     } catch (error) {
       toast({
         title: "Error",

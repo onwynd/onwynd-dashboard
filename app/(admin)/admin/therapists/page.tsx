@@ -203,8 +203,9 @@ export default function TherapistsPage() {
       const res = verificationTab === 'pending'
         ? await adminService.getPendingTherapists()
         : await adminService.getTherapists(params);
-      const data = (res as { therapists?: unknown } ).therapists ?? res;
-      const items = (data as { data?: Therapist[] })?.data ?? (Array.isArray(data) ? data : []);
+      const unwrapped = (res as any)?.data ?? res;
+      const data = (unwrapped as any)?.therapists ?? unwrapped;
+      const items = (data as any)?.data ?? (Array.isArray(data) ? data : []);
       setTherapists(items);
       setCounts((res as { counts?: Counts }).counts ?? counts);
       const d = data as { current_page?: number; last_page?: number; per_page?: number; total?: number };
@@ -311,8 +312,9 @@ export default function TherapistsPage() {
   const loadInvites = async () => {
     setInvitesLoading(true);
     try {
-      const data = await adminService.getTherapistInvites();
-      setInvites(Array.isArray(data) ? data : (data as { data?: TherapistInvite[] })?.data ?? []);
+      const res = await adminService.getTherapistInvites();
+      const data = (res as any)?.data ?? res;
+      setInvites(Array.isArray(data) ? data : (data as any)?.data ?? []);
     } catch {
       toast({ title: "Error", description: "Failed to load invites", variant: "destructive" });
     } finally {

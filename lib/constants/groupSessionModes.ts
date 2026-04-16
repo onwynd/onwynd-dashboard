@@ -94,11 +94,11 @@ export function getSessionMode(id: SessionModeId): SessionModeConfig {
 }
 
 /** Modes available to individual (non-org) users */
-export const INDIVIDUAL_MODES: SessionModeId[] = [
-  "couples",
-  "family",
-  "friends",
-];
+export const INDIVIDUAL_MODES: SessionModeConfig[] = SESSION_MODES.filter(
+  (m) => (["couples", "family", "friends"] as SessionModeId[]).includes(m.id)
+);
 
 /** Modes that require an org plan */
-export const ORG_MODES: SessionModeId[] = ["corporate", "university"];
+export const ORG_MODES: SessionModeConfig[] = SESSION_MODES.filter(
+  (m) => (["corporate", "university"] as SessionModeId[]).includes(m.id)
+);

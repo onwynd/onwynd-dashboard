@@ -71,11 +71,11 @@ export function DashboardContent() {
   return (
     <div className="grid grid-cols-12 gap-6">
       <div className="col-span-12">
-        {loadingStats ? <StatsSkeleton /> : <StatsCards stats={stats} />}
+        {loadingStats ? <StatsSkeleton /> : <StatsCards />}
       </div>
 
       <div className="col-span-12 lg:col-span-8">
-        {loadingRevenue ? <ChartSkeleton /> : <RevenueFlowChart data={revenueFlow} />}
+        {loadingRevenue ? <ChartSkeleton /> : <RevenueFlowChart />}
       </div>
 
       <div className="col-span-12 lg:col-span-4">

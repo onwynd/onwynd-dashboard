@@ -87,13 +87,14 @@ export default function AdminFeedbackPage() {
   const fetchFeedback = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await adminFeedbackService.getFeedback({ status: statusFilter, type: typeFilter });
+      const res = await adminFeedbackService.getFeedback({ status: statusFilter, type: typeFilter });
+      const data = (res as any)?.data ?? res;
       const items: FeedbackItem[] = Array.isArray(data)
         ? data
-        : (data as { feedback?: FeedbackItem[] }).feedback ?? (data as { data?: FeedbackItem[] }).data ?? [];
+        : (data as any)?.feedback ?? (data as any)?.data ?? [];
       setFeedback(items);
-      if ((data as { summary?: typeof summary }).summary) {
-        setSummary((data as { summary: typeof summary }).summary);
+      if ((data as any)?.summary) {
+        setSummary((data as any).summary);
       }
     } catch {
       toast({ title: "Error", description: "Failed to fetch feedback", variant: "destructive" });

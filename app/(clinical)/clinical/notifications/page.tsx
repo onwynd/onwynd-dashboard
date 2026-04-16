@@ -33,10 +33,10 @@ function resolveMessage(raw: Record<string, unknown>) {
 }
 
 function mapNotifications(raw: unknown): Notification[] {
-  const rows = Array.isArray(raw)
+  const rows: unknown[] = Array.isArray(raw)
     ? raw
     : (raw && typeof raw === "object" && Array.isArray((raw as Record<string, unknown>).data)
-        ? (raw as Record<string, unknown>).data
+        ? (raw as Record<string, unknown>).data as unknown[]
         : []);
 
   return rows

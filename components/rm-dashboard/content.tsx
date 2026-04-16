@@ -32,8 +32,9 @@ export function DashboardContent() {
   useEffect(() => {
     async function fetchOrgs() {
       try {
-        const data = await salesService.getManagedOrganizations();
-        setOrgs(data);
+        const res = await salesService.getManagedOrganizations();
+        const data = (res as any)?.data ?? res;
+        setOrgs(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Failed to fetch organizations", error);
       } finally {

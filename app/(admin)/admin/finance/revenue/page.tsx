@@ -123,8 +123,8 @@ export default function AdminRevenuePage() {
     setLoading(true);
     try {
       const params = dateRange();
-      const result = await adminService.getRevenueBreakdown(params);
-      setData(result as BreakdownData);
+      const res = await adminService.getRevenueBreakdown(params);
+      setData(((res as any)?.data ?? res) as unknown as BreakdownData);
     } catch {
       toast({ title: "Error", description: "Failed to load revenue data", variant: "destructive" });
     } finally {

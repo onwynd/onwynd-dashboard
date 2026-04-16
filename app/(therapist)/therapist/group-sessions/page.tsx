@@ -68,7 +68,7 @@ export default function TherapistGroupSessionsPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <Select value={modeFilter} onValueChange={(v) => { setModeFilter(v); setPage(1); }}>
+        <Select value={modeFilter} onValueChange={(v: string | null) => { setModeFilter(v ?? "all"); setPage(1); }}>
           <SelectTrigger className="h-9 w-44 text-sm">
             <SelectValue placeholder="Session mode" />
           </SelectTrigger>

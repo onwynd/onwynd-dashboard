@@ -69,9 +69,10 @@ export default function AdminUsersPage() {
     setLoading(true);
     try {
       const res = await adminService.getUsers({ page: p, search: search || undefined });
-      const data = ((res as { data?: AdminUserRow[] })?.data ?? res ?? []) as AdminUserRow[];
+      const unwrapped = (res as any)?.data ?? res;
+      const data = ((unwrapped as any)?.data ?? unwrapped ?? []) as AdminUserRow[];
       setRows(Array.isArray(data) ? data : []);
-      const m = (res as { meta?: { current_page: number; last_page: number } })?.meta ?? null;
+      const m = (unwrapped as any)?.meta ?? (res as any)?.meta ?? null;
       setMeta(m);
     } catch {
       toast({ description: "Failed to load users.", variant: "destructive" });
@@ -83,7 +84,7 @@ export default function AdminUsersPage() {
   const loadRoles = useCallback(async () => {
     try {
       const res = await adminService.getRoles();
-      const data = (res as { data?: RolesList })?.data ?? res ?? [];
+      const data = (res as any)?.data ?? res ?? [];
       setRoles(Array.isArray(data) ? data : []);
     } catch { /* ignore */ }
   }, []);
@@ -267,9 +268,10 @@ function UpgradeButton({ userId, currentPlanSlug }: { userId: number; currentPla
   const loadPlans = useCallback(async () => {
     try {
       const res = await adminService.getAllPlans();
-      const list = Array.isArray((res as { data?: unknown[] })?.data)
-        ? (res as { data: typeof plans }).data
-        : Array.isArray(res) ? res : [];
+      const inner = (res as any)?.data ?? res;
+      const list = Array.isArray((inner as any)?.data)
+        ? (inner as any).data
+        : Array.isArray(inner) ? inner : [];
       setPlans(list);
     } catch { /* ignore */ }
   }, []);

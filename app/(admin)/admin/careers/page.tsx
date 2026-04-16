@@ -128,12 +128,13 @@ export default function CareersPage() {
       if (statusFilter !== "all") params.is_active = statusFilter === "active";
       if (typeFilter !== "all") params.type = typeFilter;
       if (search.trim()) params.search = search.trim();
-      const data = await adminService.getCareers(params);
+      const res = await adminService.getCareers(params);
+      const data = (res as any)?.data ?? res;
       // API returns a Laravel paginator: { current_page, data: [...], total, ... }
       const list: JobPosting[] = Array.isArray(data)
         ? data
-        : Array.isArray((data as { data?: JobPosting[] })?.data)
-          ? (data as { data: JobPosting[] }).data
+        : Array.isArray((data as any)?.data)
+          ? (data as any).data
           : [];
       setJobs(list);
     } catch {

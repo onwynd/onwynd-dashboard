@@ -541,9 +541,11 @@ function PlanFormDialog({
 
       let saved: SubscriptionPlan;
       if (plan) {
-        saved = await adminService.updateSubscriptionPlan(plan.id, payload);
+        const res = await adminService.updateSubscriptionPlan(plan.id, payload);
+        saved = ((res as any)?.data ?? res) as unknown as SubscriptionPlan;
       } else {
-        saved = await adminService.createSubscriptionPlan(payload);
+        const res = await adminService.createSubscriptionPlan(payload);
+        saved = ((res as any)?.data ?? res) as unknown as SubscriptionPlan;
       }
 
       toast({ title: plan ? "Plan updated." : "Plan created." });

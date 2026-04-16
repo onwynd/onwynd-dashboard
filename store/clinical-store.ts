@@ -5,6 +5,7 @@ import { clinicalService, SessionReview, DistressQueueItem } from "@/lib/api/cli
 import { toast } from "@/components/ui/use-toast";
 
 export type LayoutDensity = "comfortable" | "compact" | "default";
+export type { DistressQueueItem };
 
 export interface ClinicalStat {
   title: string;
@@ -13,10 +14,37 @@ export interface ClinicalStat {
   iconName?: string;
 }
 
+export interface ClinicalPatient {
+  id: string | number;
+  uuid?: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+  email?: string;
+  status?: string;
+  department?: string;
+  profile_photo?: string | null;
+  created_at?: string;
+  [key: string]: unknown;
+}
+
+export interface FinancialFlowEntry {
+  month?: string;
+  name?: string;
+  revenue?: number;
+  value?: number;
+  [key: string]: unknown;
+}
+
 interface ClinicalState {
   stats: ClinicalStat[];
   distressQueue: DistressQueueItem[];
   reviews: SessionReview[];
+  patients: ClinicalPatient[];
+  financialFlow: FinancialFlowEntry[];
+  searchQuery: string;
+  departmentFilter: string;
+  statusFilter: string;
   loadingStats: boolean;
   loadingQueue: boolean;
   loadingReviews: boolean;
@@ -26,9 +54,14 @@ interface ClinicalState {
   fetchStats: () => Promise<void>;
   fetchDistressQueue: (page?: number) => Promise<void>;
   fetchReviews: (params?: Record<string, unknown>) => Promise<void>;
+  fetchPatients: (params?: Record<string, unknown>) => Promise<void>;
+  fetchFinancialFlow: (period?: string) => Promise<void>;
   resolveDistressItem: (id: string, resolution_type: string, notes?: string) => Promise<void>;
   processReview: (id: string, action: "approve" | "flag" | "escalate", data: Record<string, unknown>) => Promise<void>;
-
+  setSearchQuery: (q: string) => void;
+  setDepartmentFilter: (f: string) => void;
+  setStatusFilter: (f: string) => void;
+  clearFilters: () => void;
   setLayoutDensity: (v: LayoutDensity) => void;
 }
 
@@ -40,6 +73,11 @@ export const useClinicalStore = create<ClinicalState>((set, get) => ({
   ],
   distressQueue: [],
   reviews: [],
+  patients: [],
+  financialFlow: [],
+  searchQuery: "",
+  departmentFilter: "all",
+  statusFilter: "all",
   loadingStats: true,
   loadingQueue: true,
   loadingReviews: true,
@@ -118,5 +156,25 @@ export const useClinicalStore = create<ClinicalState>((set, get) => ({
     }
   },
 
+  fetchPatients: async (params) => {
+    try {
+      const { data } = await clinicalService.getPatients(params);
+      const list = Array.isArray(data) ? data : (data?.data ?? []);
+      set({ patients: list });
+    } catch { /* silent */ }
+  },
+
+  fetchFinancialFlow: async (period?) => {
+    try {
+      const { data } = await clinicalService.getFinancialFlow(period);
+      const list = Array.isArray(data) ? data : (data?.data ?? []);
+      set({ financialFlow: list });
+    } catch { /* silent */ }
+  },
+
+  setSearchQuery: (q) => set({ searchQuery: q }),
+  setDepartmentFilter: (f) => set({ departmentFilter: f }),
+  setStatusFilter: (f) => set({ statusFilter: f }),
+  clearFilters: () => set({ searchQuery: "", departmentFilter: "all", statusFilter: "all" }),
   setLayoutDensity: (v) => set({ layoutDensity: v }),
 }));

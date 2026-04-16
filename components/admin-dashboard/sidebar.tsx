@@ -154,7 +154,7 @@ export function DashboardSidebar({ ...props }: React.ComponentProps<typeof Sideb
         ]);
         const nav = s?.navigation?.disabled_routes;
         if (nav && typeof nav === "object") setDisabledRoutes(nav as Record<string, string[]>);
-        if (c) setCounts(c as { pendingTherapists: 0 });
+        if (c) setCounts(((c as any)?.data ?? c) as { pendingTherapists: 0 });
       } catch {
         setDisabledRoutes({});
       }

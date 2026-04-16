@@ -111,9 +111,10 @@ export default function AdminFinanceSubscriptionsPage() {
         plan_type: pt !== "all" ? pt : undefined,
         per_page: 20,
       });
-      setSubscriptions(res.data ?? []);
-      setStats(res.stats ?? null);
-      setMeta(res.meta ?? null);
+      const d = (res as any)?.data ?? res;
+      setSubscriptions((d as any)?.data ?? (Array.isArray(d) ? d : []));
+      setStats((d as any)?.stats ?? null);
+      setMeta((d as any)?.meta ?? null);
     } catch {
       toast({ description: "Failed to load subscriptions.", variant: "destructive" });
     } finally {

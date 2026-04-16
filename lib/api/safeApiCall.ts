@@ -5,7 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 export async function safeApiCall<T>(
   apiCall: () => Promise<T>,
   suppressErrorToast: boolean = false
-): Promise<{ data: T | null; error: string | null }> {
+): Promise<{ data: any; error: string | null }> {
   try {
     const response = await apiCall();
     // Assuming the actual data is nested in a 'data' property

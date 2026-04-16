@@ -126,7 +126,8 @@ export default function SalesAgentsPage() {
         { user_id: selectedAgent.id, role: assignRole, is_primary: assignPrimary },
       ]);
       // Refresh territory detail for this territory and rebuild map
-      const updated = await adminService.getTerritoryDetail(assignTerritoryId);
+      const res = await adminService.getTerritoryDetail(assignTerritoryId);
+      const updated = ((res as any)?.data ?? res) as unknown as Territory;
       setTerritories((prev) => prev.map((t) => t.id === updated.id ? updated : t));
       const newTerritory = territories.find((t) => t.id === Number(assignTerritoryId));
       if (newTerritory) {

@@ -73,8 +73,9 @@ export default function RefundsDisputesPage() {
       const fn = tab === "disputes"
         ? adminService.getAdminDisputes.bind(adminService)
         : adminService.getAdminRefunds.bind(adminService);
-      const data = await fn({ search: search || undefined });
-      setPayments(Array.isArray(data) ? data : (data?.data ?? []));
+      const res = await fn({ search: search || undefined });
+      const data = (res as any)?.data ?? res;
+      setPayments(Array.isArray(data) ? data : ((data as any)?.data ?? []));
     } catch {
       toast({ title: "Error", description: "Failed to load data", variant: "destructive" });
     } finally {

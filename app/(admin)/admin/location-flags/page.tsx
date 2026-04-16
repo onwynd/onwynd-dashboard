@@ -108,15 +108,16 @@ export default function LocationFlagsPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await adminService.getLocationFlags({ page });
-      const rows: LocationFlagRow[] = data?.data ?? (Array.isArray(data) ? data : []);
+      const res = await adminService.getLocationFlags({ page });
+      const data = (res as any)?.data ?? res;
+      const rows: LocationFlagRow[] = (data as any)?.data ?? (Array.isArray(data) ? data : []);
       setFlags(rows);
-      if (data?.current_page) {
+      if ((data as any)?.current_page) {
         setPagination({
-          current_page: data.current_page,
-          last_page: data.last_page ?? 1,
-          per_page: data.per_page ?? 25,
-          total: data.total ?? 0,
+          current_page: (data as any).current_page,
+          last_page: (data as any).last_page ?? 1,
+          per_page: (data as any).per_page ?? 25,
+          total: (data as any).total ?? 0,
         });
       }
     } catch {

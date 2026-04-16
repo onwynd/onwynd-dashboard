@@ -63,4 +63,59 @@ export const salesService = {
   async getManagedOrganizations() {
     return safeApiCall(() => client.get("/api/v1/sales/builder/organizations"));
   },
+
+  // Stats / Revenue / Leads
+  async getStats() {
+    return safeApiCall(() => client.get("/api/v1/sales/stats"));
+  },
+
+  async getRevenueFlow(period?: string) {
+    return safeApiCall(() => client.get("/api/v1/sales/revenue-flow", { params: { period } }));
+  },
+
+  async getLeadSources(period?: string) {
+    return safeApiCall(() => client.get("/api/v1/sales/lead-sources", { params: { period } }));
+  },
+
+  async getLeads(params?: Record<string, unknown>) {
+    return safeApiCall(() => client.get("/api/v1/sales/leads", { params }));
+  },
+
+  async updateLead(id: number | string, data: Record<string, unknown>) {
+    return safeApiCall(() => client.put(`/api/v1/sales/leads/${id}`, data));
+  },
+
+  async deleteLead(id: number | string) {
+    return safeApiCall(() => client.delete(`/api/v1/sales/leads/${id}`));
+  },
+
+  // Contacts
+  async getContacts(params?: { search?: string }) {
+    return safeApiCall(() => client.get("/api/v1/sales/contacts", { params }));
+  },
+
+  async createContact(data: Record<string, unknown>) {
+    return safeApiCall(() => client.post("/api/v1/sales/contacts", data));
+  },
+
+  async deleteContact(id: number) {
+    return safeApiCall(() => client.delete(`/api/v1/sales/contacts/${id}`));
+  },
+
+  // Tasks
+  async getTasks(params?: Record<string, unknown>) {
+    return safeApiCall(() => client.get("/api/v1/sales/tasks", { params }));
+  },
+
+  async createTask(data: { title: string; due_date?: string; priority?: string }) {
+    return safeApiCall(() => client.post("/api/v1/sales/tasks", data));
+  },
+
+  async updateTask(id: number | string, data: Record<string, unknown>) {
+    return safeApiCall(() => client.put(`/api/v1/sales/tasks/${id}`, data));
+  },
+
+  async deleteTask(id: number | string) {
+    return safeApiCall(() => client.delete(`/api/v1/sales/tasks/${id}`));
+  },
 };

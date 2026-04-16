@@ -93,8 +93,8 @@ export function PatientsTable() {
       const fullName = `${patient.first_name} ${patient.last_name}`;
       const matchesSearch =
         fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.uuid.toLowerCase().includes(searchQuery.toLowerCase());
+        (patient.email ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (patient.uuid ?? "").toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesDepartment =
         departmentFilter === "all" || patient.department === departmentFilter;
@@ -289,8 +289,8 @@ export function PatientsTable() {
                           <AvatarImage src={patient.profile_photo} />
                         ) : null}
                         <AvatarFallback className="text-[10px] font-semibold">
-                          {patient.first_name[0]}
-                          {patient.last_name[0]}
+                          {(patient.first_name ?? "")[0]}
+                          {(patient.last_name ?? "")[0]}
                         </AvatarFallback>
                       </Avatar>
                       <span className="font-medium">
@@ -312,7 +312,7 @@ export function PatientsTable() {
                     </span>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground">
-                    {new Date(patient.created_at).toLocaleDateString()}
+                    {patient.created_at ? new Date(patient.created_at).toLocaleDateString() : "—"}
                   </TableCell>
                   <TableCell>
                     <span

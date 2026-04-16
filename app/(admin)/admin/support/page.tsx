@@ -109,11 +109,12 @@ export default function AdminSupportPage() {
       ]);
 
       if (ticketsData.status === "fulfilled") {
-        const d = ticketsData.value;
-        setTickets(Array.isArray(d) ? d : d.data ?? d.tickets ?? []);
+        const raw = (ticketsData.value as any)?.data ?? ticketsData.value;
+        setTickets(Array.isArray(raw) ? raw : (raw as any)?.data ?? (raw as any)?.tickets ?? []);
       }
       if (statsData.status === "fulfilled") {
-        setStats(statsData.value);
+        const raw = (statsData.value as any)?.data ?? statsData.value;
+        setStats(raw as any);
       }
     } catch {
       toast({ title: "Error", description: "Failed to fetch support tickets", variant: "destructive" });

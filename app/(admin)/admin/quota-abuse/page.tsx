@@ -68,7 +68,8 @@ export default function QuotaAbusePage() {
   const fetchOverview = useCallback(async () => {
     setLoading(true);
     try {
-      const data = (await adminService.getQuotaOverages({})) as QuotaOverview;
+      const res = await adminService.getQuotaOverages({});
+      const data = ((res as any)?.data ?? res) as unknown as QuotaOverview;
       setOverview(data ?? null);
     } catch {
       toast({ description: "Failed to load quota data.", variant: "destructive" });
@@ -80,12 +81,13 @@ export default function QuotaAbusePage() {
   const fetchOverrides = useCallback(async (s = search) => {
     setOverridesLoading(true);
     try {
-      const data = await adminService.getDistressOverrides({ search: s || undefined, per_page: 20 });
+      const res = await adminService.getDistressOverrides({ search: s || undefined, per_page: 20 });
+      const data = (res as any)?.data ?? res;
       // Handle both paginated and plain array responses
       if (Array.isArray(data)) {
         setOverrides({ data, total: data.length, current_page: 1, last_page: 1 });
       } else {
-        setOverrides(data as PaginatedOverrides);
+        setOverrides(data as unknown as PaginatedOverrides);
       }
     } catch {
       toast({ description: "Failed to load user overrides.", variant: "destructive" });

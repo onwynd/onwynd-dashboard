@@ -15,10 +15,10 @@ import {
 import { FinancialFlowEntry } from "@/lib/api/therapist";
 
 interface FinancialFlowChartProps {
-  data: FinancialFlowEntry[];
+  data?: FinancialFlowEntry[];
 }
 
-export function FinancialFlowChart({ data }: FinancialFlowChartProps) {
+export function FinancialFlowChart({ data = [] }: FinancialFlowChartProps) {
   return (
     <Card>
       <CardHeader>

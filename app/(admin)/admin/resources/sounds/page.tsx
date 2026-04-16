@@ -32,10 +32,11 @@ export default function AdminSoundsPage() {
   const load = async (category: string): Promise<string> => {
     setLoading(true);
     try {
-      const res = await adminService.getSounds(category || undefined);
-      const data = Array.isArray(res) ? res : (res as SoundResponse).data ?? [];
-      const cats = Array.isArray(res) ? [] : (res as SoundResponse).categories ?? [];
-      const resolved = (res as SoundResponse).category ?? cats[0] ?? category;
+      const raw = await adminService.getSounds(category || undefined);
+      const res = ((raw as any)?.data ?? raw) as unknown as SoundResponse;
+      const data = Array.isArray(res) ? res : res?.data ?? [];
+      const cats = Array.isArray(res) ? [] : res?.categories ?? [];
+      const resolved = (res as any)?.category ?? cats[0] ?? category;
       setSounds(data);
       if (cats.length) setCategories(cats);
       return resolved;

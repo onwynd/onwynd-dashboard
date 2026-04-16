@@ -116,8 +116,9 @@ export default function JobApplicationsPage() {
 
   const openDetail = async (app: Application) => {
     try {
-      const full = await adminService.getJobApplication(app.uuid);
-      const validFull = full && typeof full === 'object' && 'uuid' in full ? full as Application : null;
+      const res = await adminService.getJobApplication(app.uuid);
+      const full = (res as any)?.data ?? res;
+      const validFull = full && typeof full === 'object' && 'uuid' in full ? full as unknown as Application : null;
       setSelected(validFull ?? app);
       setHrNotes(validFull?.hr_notes ?? "");
       setNewStatus(validFull?.status ?? app.status);

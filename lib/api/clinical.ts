@@ -127,4 +127,12 @@ export const clinicalService = {
   async getTherapistStatus() {
     return safeApiCall(() => client.get("/api/v1/clinical-advisor/therapist-status"));
   },
+
+  async getPatients(params?: Record<string, unknown>) {
+    return safeApiCall(() => client.get("/api/v1/clinical-advisor/patients", { params }));
+  },
+
+  async getFinancialFlow(period?: string) {
+    return safeApiCall(() => client.get("/api/v1/clinical-advisor/financial-flow", { params: { period } }));
+  },
 };

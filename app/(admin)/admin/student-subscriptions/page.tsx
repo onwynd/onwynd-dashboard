@@ -89,9 +89,11 @@ export default function StudentSubscriptionsPage() {
         plan_type: "d2c",
         per_page: 20,
       });
-      const list: UserSubscription[] = (res.data ?? res ?? []).filter((r: UserSubscription) => r.plan_slug === "student");
+      const d = (res as any)?.data ?? res;
+      const raw = (d as any)?.data ?? (Array.isArray(d) ? d : []);
+      const list: UserSubscription[] = raw.filter((r: UserSubscription) => r.plan_slug === "student");
       setSubs(list);
-      setMeta(res.meta ?? null);
+      setMeta((d as any)?.meta ?? null);
     } catch {
       toast({ description: "Failed to load student subscriptions.", variant: "destructive" });
     } finally {

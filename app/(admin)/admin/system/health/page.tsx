@@ -120,8 +120,9 @@ export default function SystemHealthPage() {
   const fetchHealth = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await adminService.getSystemStatus();
-      setHealth(data as HealthData);
+      const res = await adminService.getSystemStatus();
+      const data = (res as any)?.data ?? res;
+      setHealth(data as unknown as HealthData);
     } catch {
       toast({ title: "Error", description: "Failed to fetch system health.", variant: "destructive" });
     } finally {
